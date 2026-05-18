@@ -16,58 +16,77 @@ class ExtratoPage extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('Extrato', style: TextStyle(color: Colors.white)),
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('gastos')
-            .where('userId', isEqualTo: uid)
-            .orderBy('data', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+      body: FutureBuilder(
+        future: Future.wait([
+          FirebaseFirestore.instance.collection('ganhos').where('userId', isEqualTo: uid).orderBy('data', descending: true).get(),
+          FirebaseFirestore.instance.collection('gastos').where('userId', isEqualTo: uid).orderBy('data', descending: true).get(),
+        ]),
+        builder: (context, AsyncSnapshot<List<QuerySnapshot>> snapshot) {
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+
+          final ganhos = snapshot.data![0].docs.map((d) {
+            final data = d.data() as Map<String, dynamic>;
+            return {...data, '_tipo': 'ganho', '_id': d.id};
+          }).toList();
+
+          final gastos = snapshot.data![1].docs.map((d) {
+            final data = d.data() as Map<String, dynamic>;
+            return {...data, '_tipo': 'gasto', '_id': d.id};
+          }).toList();
+
+          // Merge and sort by date
+          final todos = [...ganhos, ...gastos];
+          todos.sort((a, b) {
+            final ta = (a['data'] as Timestamp?)?.toDate() ?? DateTime(0);
+            final tb = (b['data'] as Timestamp?)?.toDate() ?? DateTime(0);
+            return tb.compareTo(ta);
+          });
+
+          if (todos.isEmpty) {
+            return const Center(child: Text('Nenhuma transação registrada', style: TextStyle(color: Colors.white54)));
           }
-          final docs = snapshot.data?.docs ?? [];
-          if (docs.isEmpty) {
-            return const Center(
-              child: Text('Nenhum gasto registrado', style: TextStyle(color: Colors.white54)),
-            );
-          }
+
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: docs.length,
+            itemCount: todos.length,
             itemBuilder: (context, i) {
-              final d = docs[i].data() as Map<String, dynamic>;
-              final valor = (d['valor'] as num).toDouble();
-              final data = (d['data'] as Timestamp?)?.toDate();
+              final item = todos[i];
+              final isGanho = item['_tipo'] == 'ganho';
+              final valor = (item['valor'] as num).toDouble();
+              final data = (item['data'] as Timestamp?)?.toDate();
               final dataStr = data != null ? DateFormat('dd/MM/yyyy').format(data) : '';
+              final descricao = item['descricao'] ?? item['categoria'] ?? (isGanho ? 'Ganho' : 'Gasto');
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white10,
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.2),
+                        color: (isGanho ? Colors.green : Colors.red).withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.remove_circle_outline, color: Colors.red, size: 20),
+                      child: Icon(
+                        isGanho ? Icons.arrow_upward : Icons.arrow_downward,
+                        color: isGanho ? Colors.green : Colors.red,
+                        size: 20,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(d['descricao'] ?? d['categoria'] ?? 'Gasto',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                        Text('${d['categoria'] ?? ''} • $dataStr',
+                        Text(descricao, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                        Text('${isGanho ? 'Ganho' : (item['categoria'] ?? 'Gasto')} • $dataStr',
                             style: const TextStyle(color: Colors.white54, fontSize: 12)),
                       ]),
                     ),
-                    Text('- R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}',
-                        style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    Text(
+                      '${isGanho ? '+' : '-'} R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}',
+                      style: TextStyle(color: isGanho ? Colors.green : Colors.red, fontWeight: FontWeight.bold),
+                    ),
                   ],
                 ),
               );

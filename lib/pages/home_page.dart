@@ -6,6 +6,9 @@ import 'gastos_page.dart';
 import 'extrato_page.dart';
 import 'ofertas_page.dart';
 import 'assistente_page.dart';
+import 'dicas_ia_page.dart';
+import 'investimentos_page.dart';
+import 'planejamento_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -122,6 +125,25 @@ class HomePage extends StatelessWidget {
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ExtratoPage())),
                   )),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: _BotaoNav(
+                    label: 'Dicas IA', icone: Icons.lightbulb_outline, cor: Colors.yellow,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DicasIAPage())),
+                  )),
+                  const SizedBox(width: 12),
+                  Expanded(child: _BotaoNav(
+                    label: 'Investimentos', icone: Icons.trending_up, cor: Colors.green,
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const InvestimentosPage())),
+                  )),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _BotaoNavLargo(
+                label: 'Planejamento Mensal', icone: Icons.calendar_month, cor: const Color(0xFF00695C),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlanejamentoPage())),
               ),
             ],
           ),
