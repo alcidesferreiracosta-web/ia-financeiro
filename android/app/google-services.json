@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "645717748742",
+    "project_id": "i-a-financeiro-hq2c4c",
+    "storage_bucket": "i-a-financeiro-hq2c4c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:645717748742:android:2b7af889a236bfb53e2787",
+        "android_client_info": {
+          "package_name": "com.mycompany.iafinanceiro"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "645717748742-kr379tvoiidg09kij5ro0ve14q9b1tt3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.iafinanceiro",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "645717748742-cjdubihf2o83s20c89uf52qbloc2oalv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoCKKJWK3hNY0b0ugR9vKVkl-xNTn_FhI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "645717748742-cjdubihf2o83s20c89uf52qbloc2oalv.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "645717748742-2ef5tcfjskevpsnadgtckeamcf7rvvaj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.iafinanceiro"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
