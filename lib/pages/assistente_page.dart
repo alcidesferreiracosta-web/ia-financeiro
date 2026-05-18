@@ -10,16 +10,39 @@ class AssistentePage extends StatefulWidget {
 
 class _AssistentePageState extends State<AssistentePage> {
   final _mensagemController = TextEditingController();
+  final _scrollController = ScrollController();
   final List<Map<String, String>> _mensagens = [];
   bool _loading = false;
 
-  Future<Map<String, double>> _buscarDados() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    final ganhos = await FirebaseFirestore.instance.collection('ganhos').where('userId', isEqualTo: uid).get();
-    final gastos = await FirebaseFirestore.instance.collection('gastos').where('userId', isEqualTo: uid).get();
-    double totalGanhos = ganhos.docs.fold(0, (s, d) => s + (d['valor'] as num).toDouble());
-    double totalGastos = gastos.docs.fold(0, (s, d) => s + (d['valor'] as num).toDouble());
-    return {'ganhos': totalGanhos, 'gastos': totalGastos, 'saldo': totalGanhos - totalGastos};
+  @override
+  void initState() {
+    super.initState();
+    _mensagens.add({
+      'role': 'assistant',
+      'content': 'Olá! Sou seu assistente financeiro com IA. 💰\n\nPosso te ajudar com:\n• Saldo e gastos\n• Como economizar\n• Investimentos\n• Dívidas e planejamento\n\nMe pergunte qualquer coisa!',
+    });
+  }
+
+  Future<Map<String, dynamic>> _buscarDados() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return {'ganhos': 0.0, 'gastos': 0.0, 'saldo': 0.0, 'numGastos': 0, 'numGanhos': 0};
+      final uid = user.uid;
+      final ganhosDocs = await FirebaseFirestore.instance.collection('gastos').where('userId', isEqualTo: uid).get();
+      final gastosDocs = await FirebaseFirestore.instance.collection('gastos').where('userId', isEqualTo: uid).get();
+      final ganhosReal = await FirebaseFirestore.instance.collection('ganhos').where('userId', isEqualTo: uid).get();
+      double totalGanhos = ganhosReal.docs.fold(0, (s, d) => s + ((d['valor'] as num?)?.toDouble() ?? 0));
+      double totalGastos = gastosDocs.docs.fold(0, (s, d) => s + ((d['valor'] as num?)?.toDouble() ?? 0));
+      return {
+        'ganhos': totalGanhos,
+        'gastos': totalGastos,
+        'saldo': totalGanhos - totalGastos,
+        'numGastos': gastosDocs.docs.length,
+        'numGanhos': ganhosReal.docs.length,
+      };
+    } catch (_) {
+      return {'ganhos': 0.0, 'gastos': 0.0, 'saldo': 0.0, 'numGastos': 0, 'numGanhos': 0};
+    }
   }
 
   Future<void> _enviar() async {
@@ -30,51 +53,105 @@ class _AssistentePageState extends State<AssistentePage> {
       _mensagemController.clear();
       _loading = true;
     });
+    _rolarParaBaixo();
 
     final dados = await _buscarDados();
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 600));
 
     final resposta = _gerarResposta(pergunta, dados);
-    setState(() {
-      _mensagens.add({'role': 'assistant', 'content': resposta});
-      _loading = false;
+    if (mounted) {
+      setState(() {
+        _mensagens.add({'role': 'assistant', 'content': resposta});
+        _loading = false;
+      });
+      _rolarParaBaixo();
+    }
+  }
+
+  void _rolarParaBaixo() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     });
   }
 
-  String _gerarResposta(String pergunta, Map<String, double> dados) {
-    final p = pergunta.toLowerCase();
-    final saldo = dados['saldo']!;
-    final ganhos = dados['ganhos']!;
-    final gastos = dados['gastos']!;
-    final taxa = ganhos > 0 ? (gastos / ganhos * 100).toStringAsFixed(1) : '0';
+  String _fmt(double v) => 'R\$ ${v.toStringAsFixed(2).replaceAll('.', ',')}';
 
-    if (p.contains('saldo') || p.contains('quanto tenho')) {
-      return 'Seu saldo atual é R\$ ${saldo.toStringAsFixed(2).replaceAll('.', ',')}. '
-          'Você ganhou R\$ ${ganhos.toStringAsFixed(2).replaceAll('.', ',')} e gastou '
-          'R\$ ${gastos.toStringAsFixed(2).replaceAll('.', ',')}.';
+  String _gerarResposta(String pergunta, Map<String, dynamic> dados) {
+    final p = pergunta.toLowerCase()
+        .replaceAll('ã', 'a').replaceAll('ç', 'c').replaceAll('é', 'e')
+        .replaceAll('ê', 'e').replaceAll('ó', 'o').replaceAll('á', 'a')
+        .replaceAll('í', 'i').replaceAll('ú', 'u').replaceAll('õ', 'o');
+    final saldo = (dados['saldo'] as num).toDouble();
+    final ganhos = (dados['ganhos'] as num).toDouble();
+    final gastos = (dados['gastos'] as num).toDouble();
+    final taxa = ganhos > 0 ? (gastos / ganhos * 100) : 0.0;
+
+    // Saudações
+    if (p.contains('oi') || p.contains('ola') || p.contains('bom dia') ||
+        p.contains('boa tarde') || p.contains('boa noite') || p.contains('tudo bem')) {
+      return 'Olá! Estou aqui para te ajudar com suas finanças. 😊\n\nSeu saldo atual é ${_fmt(saldo)}.\n\nO que você gostaria de saber?';
     }
-    if (p.contains('economizar') || p.contains('gastar menos')) {
-      return 'Você está gastando $taxa% dos seus ganhos. '
-          '${double.parse(taxa) > 70 ? 'Atenção: isso está alto! Tente reduzir gastos supérfluos.' : 'Bom controle! Mantenha assim.'} '
-          'Dica: separe 20% do salário assim que receber para poupança.';
+
+    // Saldo
+    if (p.contains('saldo') || p.contains('quanto tenho') || p.contains('meu dinheiro') ||
+        p.contains('quanto sobrou') || p.contains('disponivel')) {
+      final status = saldo >= 0 ? '✅ Saldo positivo!' : '⚠️ Saldo negativo!';
+      return '$status\n\n💰 Saldo: ${_fmt(saldo)}\n📈 Ganhos: ${_fmt(ganhos)}\n📉 Gastos: ${_fmt(gastos)}\n📊 Você gastou ${taxa.toStringAsFixed(1)}% dos seus ganhos.';
     }
-    if (p.contains('investir') || p.contains('investimento')) {
-      return 'Com saldo de R\$ ${saldo.toStringAsFixed(2).replaceAll('.', ',')}, sugiro:\n'
-          '• Tesouro Selic: segurança e liquidez diária\n'
-          '• CDB 100% CDI: rendimento próximo ao Tesouro\n'
-          '• Comece com pelo menos R\$ 30,00';
+
+    // Gastos
+    if (p.contains('gastei') || p.contains('gastos') || p.contains('despesa') ||
+        p.contains('quanto gastei') || p.contains('saiu')) {
+      return '📉 Seus gastos totais: ${_fmt(gastos)}\n\n${taxa > 80 ? '⚠️ Atenção: você está gastando ${taxa.toStringAsFixed(0)}% dos seus ganhos. Isso é muito alto!' : taxa > 50 ? '⚠️ Você gastou ${taxa.toStringAsFixed(0)}% dos seus ganhos. Tente manter abaixo de 50%.' : '✅ Bom controle! Você gastou ${taxa.toStringAsFixed(0)}% dos seus ganhos.'}\n\nDica: categorize seus gastos para identificar onde cortar.';
     }
-    if (p.contains('dívida') || p.contains('divida')) {
-      return 'Para sair das dívidas mais rápido:\n'
-          '1. Liste todas as dívidas por taxa de juros\n'
-          '2. Pague o mínimo de todas\n'
-          '3. Direcione o extra para a de maior juros\n'
-          '4. Negocie descontos para pagamento à vista';
+
+    // Ganhos
+    if (p.contains('ganhei') || p.contains('ganhos') || p.contains('receita') ||
+        p.contains('quanto ganhei') || p.contains('renda')) {
+      return '📈 Seus ganhos totais: ${_fmt(ganhos)}\n\nDica: tente diversificar suas fontes de renda. Freelance, investimentos e renda extra podem aumentar muito seus ganhos ao longo do tempo.';
     }
-    return 'Com base nos seus dados (ganhos: R\$ ${ganhos.toStringAsFixed(2).replaceAll('.', ',')}, '
-        'gastos: R\$ ${gastos.toStringAsFixed(2).replaceAll('.', ',')}), '
-        'posso ajudar com orçamento, investimentos, economias e planejamento. '
-        'O que você quer saber especificamente?';
+
+    // Economizar
+    if (p.contains('economizar') || p.contains('poupar') || p.contains('gastar menos') ||
+        p.contains('reducao') || p.contains('cortar')) {
+      return '💡 Dicas para economizar ${_fmt(gastos * 0.2)} por mês:\n\n1. Regra 50-30-20: 50% necessidades, 30% desejos, 20% poupança\n2. Cancele assinaturas que não usa\n3. Cozinhe mais em casa\n4. Compare preços antes de comprar\n5. Evite compras por impulso — espere 48h\n\nSeu potencial de economia: ${_fmt(saldo > 0 ? saldo * 0.3 : 0)}';
+    }
+
+    // Investir
+    if (p.contains('investir') || p.contains('investimento') || p.contains('aplicar') ||
+        p.contains('render') || p.contains('rendimento')) {
+      if (saldo < 100) {
+        return '💡 Você ainda não tem saldo suficiente para investir.\n\nPrimeiro, tente juntar uma reserva de emergência de pelo menos ${_fmt(ganhos * 3)} (3 meses de ganhos).\n\nEnquanto isso: Nubank e PicPay oferecem rendimento automático no saldo da conta.';
+      }
+      return '📊 Com ${_fmt(saldo)} disponível, sugestões:\n\n🟢 Reserva emergência (prioridade):\n• Tesouro Selic — 100% seguro, liquidez diária\n• CDB com liquidez diária — bancos digitais\n\n🟡 Renda fixa (após reserva):\n• CDB 110-120% CDI — prazo 1-2 anos\n• LCI/LCA — isento de IR\n\n🔵 Longo prazo (5+ anos):\n• Fundos Imobiliários (FIIs)\n• Tesouro IPCA+\n\nComece com pelo menos R\$ 30,00 no Tesouro Direto!';
+    }
+
+    // Dívidas
+    if (p.contains('divida') || p.contains('devo') || p.contains('cartao') ||
+        p.contains('credito') || p.contains('emprestimo') || p.contains('parcela')) {
+      return '🎯 Estratégia para sair das dívidas:\n\n1. Liste todas as dívidas com taxa de juros\n2. Pague o mínimo de todas\n3. Direcione todo extra para a de MAIOR juros (método avalanche)\n4. Negocie desconto para pagamento à vista\n5. Evite cartão de crédito rotativo (juros de 400% ao ano!)\n\n⚠️ Nunca pague uma dívida com outra! Busque renegociação.';
+    }
+
+    // Reserva de emergência
+    if (p.contains('emergencia') || p.contains('reserva') || p.contains('guardar')) {
+      final meta = ganhos * 6;
+      return '🛡️ Reserva de emergência:\n\nMeta ideal: ${_fmt(meta)} (6 meses de ganhos)\n\nOnde guardar:\n• Tesouro Selic (mais rentável)\n• CDB com liquidez diária\n• Conta remunerada (Nubank, Inter)\n\nNUNCA invista a reserva em renda variável! Precisa ser acessível a qualquer momento.';
+    }
+
+    // Planejamento / orçamento
+    if (p.contains('planejar') || p.contains('planejamento') || p.contains('orcamento') ||
+        p.contains('meta') || p.contains('objetivo') || p.contains('budget')) {
+      return '📅 Planejamento financeiro mensal:\n\nCom ganhos de ${_fmt(ganhos)}:\n• Necessidades (50%): ${_fmt(ganhos * 0.5)}\n• Lazer (30%): ${_fmt(ganhos * 0.3)}\n• Poupança (20%): ${_fmt(ganhos * 0.2)}\n\nDica: anote seus gastos diariamente. O que é medido, é controlado!';
+    }
+
+    // Dica geral / padrão
+    return '💬 Com base nos seus dados:\n• Ganhos: ${_fmt(ganhos)}\n• Gastos: ${_fmt(gastos)}\n• Saldo: ${_fmt(saldo)}\n\nPosso te ajudar com:\n📊 "Meu saldo"\n💰 "Como economizar"\n📈 "Onde investir"\n🎯 "Planejamento mensal"\n💳 "Tenho dívidas"\n🛡️ "Reserva de emergência"\n\nO que você quer saber?';
   }
 
   @override
@@ -85,56 +162,84 @@ class _AssistentePageState extends State<AssistentePage> {
         backgroundColor: const Color(0xFF0D1B2A),
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('Assistente Financeiro IA', style: TextStyle(color: Colors.white)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white54),
+            onPressed: () => setState(() => _mensagens
+              ..clear()
+              ..add({'role': 'assistant', 'content': 'Conversa reiniciada. Como posso ajudar?'})),
+          ),
+        ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: _mensagens.isEmpty
-                ? Center(
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      const Icon(Icons.psychology, color: Color(0xFF7B1FA2), size: 64),
-                      const SizedBox(height: 16),
-                      const Text('Olá! Sou seu assistente financeiro.', style: TextStyle(color: Colors.white, fontSize: 16)),
-                      const SizedBox(height: 8),
-                      const Text('Pergunte sobre:\n• Como economizar\n• Investimentos\n• Saldo e gastos\n• Dívidas',
-                          textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 14)),
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: _mensagens.length + (_loading ? 1 : 0),
+              itemBuilder: (context, i) {
+                if (i == _mensagens.length) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Row(children: [
+                      SizedBox(width: 8),
+                      SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                      SizedBox(width: 8),
+                      Text('Analisando...', style: TextStyle(color: Colors.white54, fontSize: 13)),
                     ]),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _mensagens.length + (_loading ? 1 : 0),
-                    itemBuilder: (context, i) {
-                      if (i == _mensagens.length) {
-                        return const Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Row(children: [
-                            SizedBox(width: 8),
-                            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                            SizedBox(width: 8),
-                            Text('Analisando...', style: TextStyle(color: Colors.white54)),
-                          ]),
-                        );
-                      }
-                      final m = _mensagens[i];
-                      final isUser = m['role'] == 'user';
-                      return Align(
-                        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(12),
-                          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
-                          decoration: BoxDecoration(
-                            color: isUser ? const Color(0xFF1A237E) : Colors.white10,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(m['content']!, style: const TextStyle(color: Colors.white)),
-                        ),
-                      );
+                  );
+                }
+                final m = _mensagens[i];
+                final isUser = m['role'] == 'user';
+                return Align(
+                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.82),
+                    decoration: BoxDecoration(
+                      color: isUser ? const Color(0xFF1565C0) : const Color(0xFF1A2A3A),
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(16),
+                        topRight: const Radius.circular(16),
+                        bottomLeft: Radius.circular(isUser ? 16 : 4),
+                        bottomRight: Radius.circular(isUser ? 4 : 16),
+                      ),
+                    ),
+                    child: Text(m['content']!,
+                        style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.4)),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Sugestões rápidas
+          SizedBox(
+            height: 40,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              children: ['Meu saldo', 'Economizar', 'Investir', 'Planejamento', 'Reserva'].map((s) =>
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ActionChip(
+                    label: Text(s, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                    backgroundColor: Colors.white10,
+                    onPressed: () {
+                      _mensagemController.text = s;
+                      _enviar();
                     },
                   ),
+                ),
+              ).toList(),
+            ),
           ),
+          const SizedBox(height: 6),
+
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
             color: const Color(0xFF0D1B2A),
             child: Row(
               children: [
@@ -143,19 +248,20 @@ class _AssistentePageState extends State<AssistentePage> {
                     controller: _mensagemController,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
-                      hintText: 'Pergunte algo sobre suas finanças...',
+                      hintText: 'Pergunte sobre suas finanças...',
                       hintStyle: const TextStyle(color: Colors.white38),
                       filled: true,
                       fillColor: Colors.white10,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     ),
                     onSubmitted: (_) => _enviar(),
                   ),
                 ),
                 const SizedBox(width: 8),
                 CircleAvatar(
-                  backgroundColor: const Color(0xFF7B1FA2),
+                  backgroundColor: const Color(0xFF1565C0),
                   child: IconButton(
                     icon: const Icon(Icons.send, color: Colors.white, size: 20),
                     onPressed: _loading ? null : _enviar,

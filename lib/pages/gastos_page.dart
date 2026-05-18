@@ -21,24 +21,60 @@ class _GastosPageState extends State<GastosPage> {
   ];
 
   Future<void> _salvar() async {
-    if (_valorController.text.isEmpty) return;
+    if (_valorController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe o valor do gasto.'), backgroundColor: Colors.orange),
+      );
+      return;
+    }
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Você precisa estar logado.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
     setState(() { _loading = true; });
     try {
-      final uid = FirebaseAuth.instance.currentUser!.uid;
       final valor = double.tryParse(_valorController.text.replaceAll(',', '.')) ?? 0;
+      if (valor <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Digite um valor válido maior que zero.'), backgroundColor: Colors.orange),
+        );
+        setState(() { _loading = false; });
+        return;
+      }
       await FirebaseFirestore.instance.collection('gastos').add({
-        'userId': uid,
+        'userId': user.uid,
         'valor': valor,
         'categoria': _categoria,
         'descricao': _descricaoController.text.trim(),
         'data': FieldValue.serverTimestamp(),
         'necessario': _necessario,
       });
-      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gasto salvo com sucesso!'), backgroundColor: Colors.green),
+        );
+        Navigator.pop(context);
+      }
+    } on FirebaseException catch (e) {
+      String msg;
+      switch (e.code) {
+        case 'permission-denied': msg = 'Sem permissão. Verifique as regras do Firestore.'; break;
+        case 'unavailable': msg = 'Sem conexão com o servidor. Verifique o Wi-Fi.'; break;
+        case 'not-found': msg = 'Dados não encontrados.'; break;
+        default: msg = 'Erro ao salvar: ${e.code}';
+      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: Colors.red),
+      );
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro: $e')));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Erro inesperado. Tente novamente.'), backgroundColor: Colors.red),
+      );
     } finally {
-      setState(() { _loading = false; });
+      if (mounted) setState(() { _loading = false; });
     }
   }
 
@@ -51,7 +87,7 @@ class _GastosPageState extends State<GastosPage> {
         iconTheme: const IconThemeData(color: Colors.white),
         title: const Text('Adicionar Gasto', style: TextStyle(color: Colors.white)),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
@@ -65,7 +101,7 @@ class _GastosPageState extends State<GastosPage> {
             TextField(
               controller: _descricaoController,
               style: const TextStyle(color: Colors.white),
-              decoration: _inputDecoration('Descrição', Icons.description_outlined),
+              decoration: _inputDecoration('Descrição (opcional)', Icons.description_outlined),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
@@ -77,12 +113,24 @@ class _GastosPageState extends State<GastosPage> {
               onChanged: (v) => setState(() { _categoria = v!; }),
             ),
             const SizedBox(height: 16),
-            Row(children: [
-              const Text('Gasto necessário?', style: TextStyle(color: Colors.white70)),
-              const Spacer(),
-              Switch(value: _necessario, onChanged: (v) => setState(() { _necessario = v; }),
-                  activeColor: Colors.green),
-            ]),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.white10,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(children: [
+                const Icon(Icons.check_circle_outline, color: Colors.white54, size: 20),
+                const SizedBox(width: 8),
+                const Text('Gasto necessário?', style: TextStyle(color: Colors.white70)),
+                const Spacer(),
+                Switch(
+                  value: _necessario,
+                  onChanged: (v) => setState(() { _necessario = v; }),
+                  activeColor: Colors.green,
+                ),
+              ]),
+            ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -94,7 +142,9 @@ class _GastosPageState extends State<GastosPage> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: _loading ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                child: _loading
+                    ? const SizedBox(width: 20, height: 20,
+                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                     : const Text('Salvar Gasto', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
