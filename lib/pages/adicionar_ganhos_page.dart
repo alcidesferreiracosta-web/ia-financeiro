@@ -70,7 +70,7 @@ class _AdicionarGanhosPageState extends State<AdicionarGanhosPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _loading ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                    : const Text('Salvar Ganho', fontWeight: FontWeight.bold, fontSize: 16),
+                    : const Text('Salvar Ganho', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ],

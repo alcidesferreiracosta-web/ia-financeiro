@@ -95,7 +95,7 @@ class _GastosPageState extends State<GastosPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _loading ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
-                    : const Text('Salvar Gasto', fontWeight: FontWeight.bold, fontSize: 16),
+                    : const Text('Salvar Gasto', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ),
           ],

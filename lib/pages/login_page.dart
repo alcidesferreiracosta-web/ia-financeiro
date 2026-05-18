@@ -92,7 +92,7 @@ class _LoginPageState extends State<LoginPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _loading ? const CircularProgressIndicator(strokeWidth: 2)
-                    : const Text('Entrar', fontWeight: FontWeight.bold, fontSize: 16),
+                    : const Text('Entrar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
               const SizedBox(height: 16),
               OutlinedButton.icon(

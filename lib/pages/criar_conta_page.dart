@@ -87,7 +87,7 @@ class _CriarContaPageState extends State<CriarContaPage> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: _loading ? const CircularProgressIndicator(strokeWidth: 2)
-                    : const Text('Criar Conta', fontWeight: FontWeight.bold, fontSize: 16),
+                    : const Text('Criar Conta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               ),
             ],
           ),
