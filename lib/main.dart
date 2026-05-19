@@ -7,6 +7,7 @@ import 'pages/home_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  FlutterError.onError = FlutterError.presentError;
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const IAFinanceiroApp());
 }

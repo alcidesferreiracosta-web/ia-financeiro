@@ -89,9 +89,12 @@ class _CardOferta extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () async =>
+        onTap: () async {
+          try {
             await launchUrl(Uri.parse(redirectUrl),
-                mode: LaunchMode.externalApplication),
+                mode: LaunchMode.externalApplication);
+          } catch (_) {}
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -198,9 +201,12 @@ class _CardOferta extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () async => await launchUrl(
-                          Uri.parse(redirectUrl),
-                          mode: LaunchMode.externalApplication),
+                      onPressed: () async {
+                        try {
+                          await launchUrl(Uri.parse(redirectUrl),
+                              mode: LaunchMode.externalApplication);
+                        } catch (_) {}
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
