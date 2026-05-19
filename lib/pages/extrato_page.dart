@@ -25,8 +25,8 @@ class _ExtratoPageState extends State<ExtratoPage> {
     try {
       final uid = FirebaseAuth.instance.currentUser!.uid;
       final results = await Future.wait([
-        FirebaseFirestore.instance.collection('ganhos').where('userId', isEqualTo: uid).get(),
-        FirebaseFirestore.instance.collection('gastos').where('userId', isEqualTo: uid).get(),
+        FirebaseFirestore.instance.collection('ganhos').where('userId', isEqualTo: uid).orderBy('data', descending: true).get(),
+        FirebaseFirestore.instance.collection('gastos').where('userId', isEqualTo: uid).orderBy('data', descending: true).get(),
       ]);
 
       final ganhos = results[0].docs.map((d) => {...d.data() as Map<String, dynamic>, '_tipo': 'ganho', '_id': d.id}).toList();
