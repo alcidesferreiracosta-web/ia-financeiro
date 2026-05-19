@@ -322,7 +322,7 @@ class _AssistentePageState extends State<AssistentePage> {
 
     // ── Planejamento ──
     if (RegExp(r'\b(planejar|planejamento|orcamento|meta|objetivo|mes)\b').hasMatch(p)) {
-      final rendaUsar = renda > 0 ? renda : 3000;
+      final rendaUsar = renda > 0 ? renda : 3000.0;
       return '📅 Planejamento com ${_fmt(rendaUsar)}/mês (regra 50-30-20):\n\n'
           '🏠 Necessidades (50%): ${_fmt(rendaUsar * 0.5)}\n'
           '   Aluguel, alimentação, transporte, saúde\n\n'
