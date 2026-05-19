@@ -516,7 +516,11 @@ class _AssistentePageState extends State<AssistentePage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D1B2A),
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Assistente IA', style: TextStyle(color: Colors.white)),
+        title: const Row(children: [
+          Icon(Icons.psychology, color: Colors.orange, size: 22),
+          SizedBox(width: 8),
+          Text('FinanceIA', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        ]),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white54),
