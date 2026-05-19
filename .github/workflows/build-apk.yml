@@ -26,11 +26,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Analyze
-        run: flutter analyze --no-fatal-infos 2>&1 | tee analyze.log || true
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+          echo "flutter.sdk=$(dirname $(dirname $(which flutter)))" >> android/local.properties
+          cat android/local.properties
 
       - name: Build APK
-        run: flutter build apk --release 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+        run: flutter build apk --release
 
       - name: Upload APK
         if: success()
@@ -39,13 +42,3 @@ jobs:
           name: ia-financeiro-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
-
-      - name: Upload build log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: |
-            build.log
-            analyze.log
-          retention-days: 7
