@@ -22,9 +22,14 @@ class OfertasPage extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('ofertas')
             .where('ativo', isEqualTo: true)
-            .orderBy('destaque', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Erro ao carregar ofertas: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.redAccent)),
+            );
+          }
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
                 child: CircularProgressIndicator(color: Colors.orange));
@@ -41,7 +46,13 @@ class OfertasPage extends StatelessWidget {
               ),
             );
           }
-          final docs = snapshot.data!.docs;
+          // Ordenar destaques primeiro no cliente (evita índice composto no Firestore)
+          final docs = List.of(snapshot.data!.docs)
+            ..sort((a, b) {
+              final ad = (a.data() as Map)['destaque'] == true ? 0 : 1;
+              final bd = (b.data() as Map)['destaque'] == true ? 0 : 1;
+              return ad.compareTo(bd);
+            });
           return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: docs.length,
