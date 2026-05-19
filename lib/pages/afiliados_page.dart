@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 const _mlAfiliadoId = '';     // Mercado Livre Afiliados → afiliados.mercadolivre.com.br
 const _hotmartRef = '';       // Hotmart → hotmart.com → Mercado de Afiliados → seu código
 const _amazonTag = '';        // Amazon → associados-amazon.com.br → sua tag
+const _shopeeAffId = '';      // Shopee Afiliados → affiliate.shopee.com.br → Site ID
 // ───────────────────────────────────────────────────────────────────────────
 
 class AfiliadosPage extends StatefulWidget {
@@ -93,6 +94,46 @@ Future<List<Map<String, dynamic>>> _buscarML(
 String _hotmartLink(String productCode) {
   final base = 'https://pay.hotmart.com/$productCode';
   return _hotmartRef.isNotEmpty ? '$base?ref=$_hotmartRef' : base;
+}
+
+// ── Busca Shopee Brasil ─────────────────────────────────────────────────────
+Future<List<Map<String, dynamic>>> _buscarShopee(String query) async {
+  final encoded = Uri.encodeComponent(query.trim());
+  final uri = Uri.parse(
+    'https://shopee.com.br/api/v4/search/search_items'
+    '?by=relevancy&keyword=$encoded&limit=20&newest=0'
+    '&order=desc&page_type=search&scenario=PAGE_GLOBAL_SEARCH&version=2',
+  );
+  final res = await http.get(uri, headers: {
+    'User-Agent': 'Mozilla/5.0',
+    'Referer': 'https://shopee.com.br',
+    'x-api-source': 'pc',
+  }).timeout(const Duration(seconds: 12));
+
+  if (res.statusCode != 200) return [];
+
+  final data = jsonDecode(res.body);
+  final List items = data['items'] ?? [];
+  return items.map<Map<String, dynamic>>((e) {
+    final info = e['item_basic'] ?? e;
+    final shopId = info['shopid'] ?? 0;
+    final itemId = info['itemid'] ?? 0;
+    final nome = (info['name'] as String? ?? '').replaceAll(' ', '-');
+    String link = 'https://shopee.com.br/$nome-i.$shopId.$itemId';
+    if (_shopeeAffId.isNotEmpty) link += '?af_siteid=$_shopeeAffId&smtt=0.0';
+    final thumb = info['image'] as String? ?? '';
+    return {
+      'titulo': info['name'] ?? '',
+      'preco': ((info['price'] ?? 0) / 100000).toDouble(),
+      'imagem': thumb.isNotEmpty
+          ? 'https://cf.shopee.com.br/file/$thumb'
+          : '',
+      'link': link,
+      'frete_gratis': (info['show_free_shipping'] ?? false) as bool,
+      'condicao': 'Novo',
+      'vendidos': info['sold'] ?? 0,
+    };
+  }).toList();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -357,6 +398,7 @@ class _TabFisicoState extends State<_TabFisico> {
   bool _loading = false;
   List<Map<String, dynamic>> _resultados = [];
   String? _erro;
+  String _plataforma = 'ml'; // 'ml' | 'shopee'
 
   final List<Map<String, dynamic>> _chips = [
     {'nome': 'Smartphone', 'icone': Icons.smartphone},
@@ -373,7 +415,9 @@ class _TabFisicoState extends State<_TabFisico> {
     if (query.trim().isEmpty) return;
     setState(() { _loading = true; _resultados = []; _erro = null; });
     try {
-      final items = await _buscarML(query);
+      final items = _plataforma == 'shopee'
+          ? await _buscarShopee(query)
+          : await _buscarML(query);
       setState(() => _resultados = items);
       if (items.isEmpty) setState(() => _erro = 'Nenhum produto encontrado.');
     } catch (_) {
@@ -390,8 +434,33 @@ class _TabFisicoState extends State<_TabFisico> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Seletor de plataforma
         Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+          padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+          child: Row(children: [
+            _BotaoPlataforma(
+              label: 'Mercado Livre',
+              cor: const Color(0xFF1DB954),
+              ativo: _plataforma == 'ml',
+              onTap: () {
+                setState(() { _plataforma = 'ml'; _resultados = []; });
+                if (_ctrl.text.isNotEmpty) _buscar(_ctrl.text);
+              },
+            ),
+            const SizedBox(width: 8),
+            _BotaoPlataforma(
+              label: 'Shopee',
+              cor: const Color(0xFFEE4D2D),
+              ativo: _plataforma == 'shopee',
+              onTap: () {
+                setState(() { _plataforma = 'shopee'; _resultados = []; });
+                if (_ctrl.text.isNotEmpty) _buscar(_ctrl.text);
+              },
+            ),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
           child: Column(children: [
             TextField(
               controller: _ctrl,
@@ -523,6 +592,43 @@ class _TabFisicoState extends State<_TabFisico> {
           ]),
         )),
       ]),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// Botão seletor de plataforma
+// ══════════════════════════════════════════════════════════════════════════════
+
+class _BotaoPlataforma extends StatelessWidget {
+  final String label;
+  final Color cor;
+  final bool ativo;
+  final VoidCallback onTap;
+  const _BotaoPlataforma(
+      {required this.label, required this.cor, required this.ativo, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: ativo ? cor : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: ativo ? cor : Colors.white24),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: ativo ? Colors.white : Colors.white54,
+            fontWeight: ativo ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
+      ),
     );
   }
 }
