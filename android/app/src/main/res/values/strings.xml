@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">IA Financeiro</string>
-    <string name="facebook_app_id">SEU_FACEBOOK_APP_ID</string>
-    <string name="fb_login_protocol_scheme">fbSEU_FACEBOOK_APP_ID</string>
-    <string name="facebook_client_token">SEU_FACEBOOK_CLIENT_TOKEN</string>
+    <string name="facebook_app_id">SEU_APP_ID_AQUI</string>
+    <string name="facebook_client_token">SEU_CLIENT_TOKEN_AQUI</string>
+    <string name="fb_login_protocol_scheme">fbSEU_APP_ID_AQUI</string>
 </resources>

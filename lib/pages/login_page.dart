@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'criar_conta_page.dart';
+import 'social_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -42,43 +41,24 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _loginGoogle() async {
     setState(() { _loading = true; _erro = null; });
     try {
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) { setState(() => _loading = false); return; }
-      final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      final result = await SocialAuth.loginGoogle();
+      if (result == null && mounted) setState(() => _loading = false);
     } catch (e) {
-      setState(() => _erro = 'Erro Google: $e');
+      setState(() => _erro = 'Erro ao entrar com Google.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _loginFacebook() async {
-    // Facebook login via navegador externo (não requer SDK nativo)
+    setState(() { _loading = true; _erro = null; });
     try {
-      final uri = Uri.parse('https://www.facebook.com/login');
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Para ativar login com Facebook, configure seu App ID no Firebase Console.'),
-              duration: Duration(seconds: 4),
-            ),
-          );
-        }
-      }
+      final result = await SocialAuth.loginFacebook();
+      if (result == null && mounted) setState(() => _loading = false);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não foi possível abrir o Facebook.')),
-        );
-      }
+      setState(() => _erro = 'Erro ao entrar com Facebook.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
