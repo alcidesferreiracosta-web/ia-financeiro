@@ -327,8 +327,8 @@ class _AssistentePageState extends State<AssistentePage> {
 
     // ── Reserva de emergência ──
     if (RegExp(r'\b(reserva|emergencia|fundo|reserva de emergencia|quanto reservar)\b').hasMatch(p)) {
-      final reservaIdeal = gastos > 0 ? gastos * 6 : (renda > 0 ? renda * 6 : 0);
-      final reserva3 = gastos > 0 ? gastos * 3 : (renda > 0 ? renda * 3 : 0);
+      final double reservaIdeal = gastos > 0 ? gastos * 6 : (renda > 0 ? renda * 6 : 0.0);
+      final double reserva3 = gastos > 0 ? gastos * 3 : (renda > 0 ? renda * 3 : 0.0);
       return '🛡️ Reserva de emergência:\n\n'
           'É o dinheiro para cobrir imprevistos sem entrar em dívidas.\n\n'
           '📌 Regra geral:\n'
