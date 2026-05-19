@@ -9,6 +9,7 @@ import 'assistente_page.dart';
 import 'dicas_ia_page.dart';
 import 'investimentos_page.dart';
 import 'planejamento_page.dart';
+import 'afiliados_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -194,6 +195,13 @@ class _HomePageState extends State<HomePage> {
                 cor: const Color(0xFF00695C),
                 onTap: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const PlanejamentoPage())),
+              ),
+              const SizedBox(height: 12),
+              _BotaoNavLargo(
+                label: 'Loja de Afiliados', icone: Icons.storefront_outlined,
+                cor: const Color(0xFF7B1FA2),
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const AfiliadosPage())),
               ),
             ],
           ),
