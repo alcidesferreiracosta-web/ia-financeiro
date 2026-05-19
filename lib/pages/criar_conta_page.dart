@@ -30,18 +30,6 @@ class _CriarContaPageState extends State<CriarContaPage> {
     }
   }
 
-  Future<void> _cadastrarFacebook() async {
-    setState(() { _loading = true; _erro = null; });
-    try {
-      final result = await SocialAuth.loginFacebook();
-      if (result == null && mounted) setState(() => _loading = false);
-    } catch (e) {
-      setState(() => _erro = 'Erro ao cadastrar com Facebook.');
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
   String _traduzirErro(String code) {
     switch (code) {
       case 'email-already-in-use': return 'Este e-mail já está cadastrado. Faça login.';
@@ -186,32 +174,6 @@ class _CriarContaPageState extends State<CriarContaPage> {
                   const SizedBox(width: 10),
                   const Text('Cadastrar com Google',
                       style: TextStyle(color: Colors.white, fontSize: 15)),
-                ]),
-              ),
-              const SizedBox(height: 10),
-
-              // Botão Facebook
-              OutlinedButton(
-                onPressed: _loading ? null : _cadastrarFacebook,
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF1877F2), width: 1.2),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  backgroundColor: const Color(0xFF1877F2).withOpacity(0.08),
-                ),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Container(
-                    width: 22, height: 22,
-                    decoration: const BoxDecoration(color: Color(0xFF1877F2), shape: BoxShape.circle),
-                    child: const Center(
-                      child: Text('f', style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text('Cadastrar com Facebook',
-                      style: TextStyle(color: Color(0xFF1877F2), fontSize: 15,
-                          fontWeight: FontWeight.w600)),
                 ]),
               ),
 

@@ -212,7 +212,8 @@ class _OfertasPageState extends State<OfertasPage> {
 
 // ─── Snapshot financeiro ──────────────────────────────────────────────────────
 class _FinancialSnapshot extends StatelessWidget {
-  final double saldo, score, ganhos, gastos;
+  final double saldo, ganhos, gastos;
+  final int score;
   const _FinancialSnapshot(
       {required this.saldo,
       required this.score,
@@ -223,7 +224,7 @@ class _FinancialSnapshot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cor = ScorePage.corNivel(score.toInt());
+    final cor = ScorePage.corNivel(score);
     final saldoCor = saldo >= 0 ? Colors.greenAccent : Colors.redAccent;
 
     return Container(
@@ -250,11 +251,11 @@ class _FinancialSnapshot extends StatelessWidget {
             const Text('SCORE FINANCEIRO',
                 style: TextStyle(color: Colors.white38, fontSize: 10, letterSpacing: 1)),
             Row(children: [
-              Text('${score.toInt()}/100',
+              Text('$score/100',
                   style: TextStyle(
                       color: cor, fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(width: 6),
-              Text(ScorePage.emoji(score.toInt()),
+              Text(ScorePage.emoji(score),
                   style: const TextStyle(fontSize: 16)),
             ]),
           ]),
@@ -266,7 +267,8 @@ class _FinancialSnapshot extends StatelessWidget {
 
 // ─── Conselho da FinanceIA ────────────────────────────────────────────────────
 class _IaConselhoCard extends StatelessWidget {
-  final double saldo, ganhos, gastos, score;
+  final double saldo, ganhos, gastos;
+  final int score;
   const _IaConselhoCard(
       {required this.saldo,
       required this.ganhos,
@@ -278,7 +280,7 @@ class _IaConselhoCard extends StatelessWidget {
       return 'Seu saldo está negativo. A FinanceIA recomenda adiar compras até equilibrar o orçamento.';
     }
     if (score >= 80) {
-      return 'Parabéns! Com score ${score.toInt()} você está em ótima forma. Avalie bem antes de comprar — mesmo assim.';
+      return 'Parabéns! Com score $score você está em ótima forma. Avalie bem antes de comprar — mesmo assim.';
     }
     if (score >= 65) {
       return 'Você está bem financeiramente. Compras abaixo de 10% da renda são seguras agora.';
@@ -483,7 +485,8 @@ class _EbookCard extends StatelessWidget {
 class _CardOfertaInteligente extends StatelessWidget {
   final QueryDocumentSnapshot doc;
   final int ranking;
-  final double saldo, ganhos, gastos, score;
+  final double saldo, ganhos, gastos;
+  final int score;
 
   const _CardOfertaInteligente({
     required this.doc,
@@ -551,8 +554,8 @@ class _CardOfertaInteligente extends StatelessWidget {
             Expanded(child: _CheckItem(label: 'Seu saldo', valor: _fmt(saldo),
                 cor: saldo >= 0 ? Colors.greenAccent : Colors.redAccent)),
             Expanded(child: _CheckItem(
-                label: 'Score', valor: '${score.toInt()}/100',
-                cor: ScorePage.corNivel(score.toInt()))),
+                label: 'Score', valor: '$score/100',
+                cor: ScorePage.corNivel(score))),
             if (ganhos > 0)
               Expanded(child: _CheckItem(
                   label: 'Da renda',
