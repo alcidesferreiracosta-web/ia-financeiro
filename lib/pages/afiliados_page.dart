@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
 // ── Seus IDs de afiliado (preencha após cadastro) ──────────────────────────
-const _mlAfiliadoId = '';     // Mercado Livre Afiliados → afiliados.mercadolivre.com.br
+const _mlAfiliadoId = '450000067'; // Mercado Livre — User ID afiliado
 const _hotmartRef = '';       // Hotmart → hotmart.com → Mercado de Afiliados → seu código
 const _amazonTag = '';        // Amazon → associados-amazon.com.br → sua tag
 const _shopeeAffId = '';      // Shopee Afiliados → affiliate.shopee.com.br → Site ID
@@ -76,7 +76,7 @@ Future<List<Map<String, dynamic>>> _buscarML(
   return items.map<Map<String, dynamic>>((item) {
     String link = item['permalink'] as String? ?? '';
     if (_mlAfiliadoId.isNotEmpty) {
-      link += '${link.contains('?') ? '&' : '?'}aff_id=$_mlAfiliadoId';
+      link += '${link.contains('?') ? '&' : '?'}affiliation_id=$_mlAfiliadoId';
     }
     return {
       'titulo': item['title'] ?? '',

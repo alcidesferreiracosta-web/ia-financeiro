@@ -1,81 +1,13 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class OfertasPage extends StatefulWidget {
+// Link mascarado → Cloud Function → link afiliado real (nunca exposto)
+const _redirectBase =
+    'https://us-central1-i-a-financeiro-hq2c4c.cloudfunctions.net/redirectAfiliado';
+
+class OfertasPage extends StatelessWidget {
   const OfertasPage({super.key});
-  @override
-  State<OfertasPage> createState() => _OfertasPageState();
-}
-
-class _OfertasPageState extends State<OfertasPage> {
-  final _searchController = TextEditingController();
-  bool _loading = false;
-  List<Map<String, dynamic>> _resultados = [];
-  String? _erro;
-
-  final List<Map<String, dynamic>> _categorias = [
-    {'nome': 'Televisão', 'icone': Icons.tv},
-    {'nome': 'Celular', 'icone': Icons.smartphone},
-    {'nome': 'Notebook', 'icone': Icons.laptop},
-    {'nome': 'Geladeira', 'icone': Icons.kitchen},
-    {'nome': 'Tênis', 'icone': Icons.directions_run},
-    {'nome': 'Perfume', 'icone': Icons.spa},
-    {'nome': 'Fone de ouvido', 'icone': Icons.headphones},
-    {'nome': 'Videogame', 'icone': Icons.sports_esports},
-    {'nome': 'Ar condicionado', 'icone': Icons.ac_unit},
-    {'nome': 'Máquina de lavar', 'icone': Icons.local_laundry_service},
-  ];
-
-  Future<void> _pesquisar(String query) async {
-    if (query.trim().isEmpty) return;
-    setState(() {
-      _loading = true;
-      _resultados = [];
-      _erro = null;
-    });
-
-    try {
-      final encoded = Uri.encodeComponent(query.trim());
-      final uri = Uri.parse(
-          'https://api.mercadolibre.com/sites/MLB/search?q=$encoded&limit=20');
-      final response = await http.get(uri).timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List items = data['results'] ?? [];
-        setState(() {
-          _resultados = items.map<Map<String, dynamic>>((item) {
-            return {
-              'titulo': item['title'] ?? '',
-              'preco': (item['price'] ?? 0).toDouble(),
-              'imagem': item['thumbnail'] ?? '',
-              'link': item['permalink'] ?? '',
-              'frete_gratis': item['shipping']?['free_shipping'] ?? false,
-              'condicao': item['condition'] == 'new' ? 'Novo' : 'Usado',
-            };
-          }).toList();
-        });
-      } else {
-        setState(() => _erro = 'Erro ao buscar produtos. Tente novamente.');
-      }
-    } catch (_) {
-      setState(() => _erro = 'Sem conexão. Verifique sua internet.');
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
-
-  String _fmt(double v) {
-    return 'R\$ ${v.toStringAsFixed(2).replaceAll('.', ',')}';
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,279 +16,209 @@ class _OfertasPageState extends State<OfertasPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D1B2A),
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Buscar Ofertas',
-            style: TextStyle(color: Colors.white)),
+        title: const Text('Ofertas', style: TextStyle(color: Colors.white)),
       ),
-      body: Column(
-        children: [
-          // Barra de pesquisa
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            color: const Color(0xFF0D1B2A),
-            child: Column(
-              children: [
-                TextField(
-                  controller: _searchController,
-                  style: const TextStyle(color: Colors.white),
-                  onSubmitted: _pesquisar,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar produto...',
-                    hintStyle: const TextStyle(color: Colors.white38),
-                    filled: true,
-                    fillColor: Colors.white10,
-                    prefixIcon:
-                        const Icon(Icons.search, color: Colors.white54),
-                    suffixIcon: _loading
-                        ? const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.orange)),
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('ofertas')
+            .where('ativo', isEqualTo: true)
+            .orderBy('destaque', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+                child: CircularProgressIndicator(color: Colors.orange));
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: Text(
+                  'Nenhuma oferta disponível no momento.\nVolte em breve!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white54, fontSize: 15),
                 ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed:
-                        _loading ? null : () => _pesquisar(_searchController.text),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
-                    child: const Text('Buscar ofertas',
-                        style: TextStyle(fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Chips de categorias
-                SizedBox(
-                  height: 36,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: _categorias.map((cat) {
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ActionChip(
-                          avatar: Icon(cat['icone'] as IconData,
-                              size: 15, color: Colors.orange),
-                          label: Text(cat['nome'] as String,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 12)),
-                          backgroundColor: Colors.white10,
-                          side: const BorderSide(
-                              color: Colors.orange, width: 0.5),
-                          onPressed: () {
-                            _searchController.text = cat['nome'] as String;
-                            _pesquisar(cat['nome'] as String);
-                          },
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Resultados
-          Expanded(
-            child: _resultados.isEmpty && !_loading
-                ? _erro != null
-                    ? Center(
-                        child: Text(_erro!,
-                            style: const TextStyle(color: Colors.red)))
-                    : _buildDicas()
-                : _loading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.orange))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(12),
-                        itemCount: _resultados.length,
-                        itemBuilder: (ctx, i) =>
-                            _buildCard(_resultados[i]),
-                      ),
-          ),
-        ],
+              ),
+            );
+          }
+          final docs = snapshot.data!.docs;
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: docs.length,
+            itemBuilder: (context, i) => _CardOferta(doc: docs[i]),
+          );
+        },
       ),
     );
   }
+}
 
-  Widget _buildCard(Map<String, dynamic> item) {
+class _CardOferta extends StatelessWidget {
+  final QueryDocumentSnapshot doc;
+  const _CardOferta({required this.doc});
+
+  String _fmt(double v) =>
+      'R\$ ${v.toStringAsFixed(2).replaceAll('.', ',')}';
+
+  @override
+  Widget build(BuildContext context) {
+    final data = doc.data() as Map<String, dynamic>;
+    final titulo = data['titulo'] as String? ?? '';
+    final descricao = data['descricao'] as String? ?? '';
+    final preco = (data['preco'] as num?)?.toDouble() ?? 0;
+    final precoOriginal = (data['preco_original'] as num?)?.toDouble() ?? 0;
+    final imagem = data['imagem_url'] as String? ?? '';
+    final destaque = data['destaque'] as bool? ?? false;
+    final freteGratis = data['frete_gratis'] as bool? ?? false;
+    final redirectUrl = '$_redirectBase/${doc.id}';
+
     return Card(
       color: const Color(0xFF1A2A3A),
-      margin: const EdgeInsets.only(bottom: 10),
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          final uri = Uri.parse(item['link'] as String);
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  item['imagem'] as String,
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 80,
-                    height: 80,
-                    color: Colors.white10,
-                    child: const Icon(Icons.image_not_supported,
-                        color: Colors.white24),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item['titulo'] as String,
+        borderRadius: BorderRadius.circular(14),
+        onTap: () async =>
+            await launchUrl(Uri.parse(redirectUrl),
+                mode: LaunchMode.externalApplication),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Imagem
+            ClipRRect(
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(14)),
+              child: imagem.isNotEmpty
+                  ? Image.network(
+                      imagem,
+                      width: double.infinity,
+                      height: 160,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _placeholder(),
+                    )
+                  : _placeholder(),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Badge destaque
+                  if (destaque)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                            color: Colors.orange.withOpacity(0.5)),
+                      ),
+                      child: const Text('⭐ Em destaque',
+                          style: TextStyle(
+                              color: Colors.orange,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold)),
+                    ),
+
+                  // Título
+                  Text(titulo,
                       style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600),
                       maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _fmt(item['preco'] as double),
-                      style: const TextStyle(
-                          color: Colors.orange,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold),
-                    ),
+                      overflow: TextOverflow.ellipsis),
+
+                  // Descrição
+                  if (descricao.isNotEmpty && descricao != titulo) ...[
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        if (item['frete_gratis'] as bool)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text('Frete grátis',
-                                style: TextStyle(
-                                    color: Colors.green, fontSize: 11)),
-                          ),
-                        const SizedBox(width: 6),
-                        Text(
-                          item['condicao'] as String,
+                    Text(descricao,
+                        style: const TextStyle(
+                            color: Colors.white54, fontSize: 12),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
+                  ],
+
+                  const SizedBox(height: 10),
+
+                  // Preço
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(_fmt(preco),
                           style: const TextStyle(
-                              color: Colors.white38, fontSize: 11),
-                        ),
+                              color: Colors.orange,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold)),
+                      if (precoOriginal > preco) ...[
+                        const SizedBox(width: 8),
+                        Text(_fmt(precoOriginal),
+                            style: const TextStyle(
+                                color: Colors.white38,
+                                fontSize: 13,
+                                decoration: TextDecoration.lineThrough,
+                                decorationColor: Colors.white38)),
                       ],
+                    ],
+                  ),
+
+                  // Badges
+                  if (freteGratis) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text('Frete grátis',
+                          style:
+                              TextStyle(color: Colors.green, fontSize: 11)),
                     ),
                   ],
-                ),
+
+                  const SizedBox(height: 14),
+
+                  // Botão
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async => await launchUrl(
+                          Uri.parse(redirectUrl),
+                          mode: LaunchMode.externalApplication),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                        padding:
+                            const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Ver Oferta',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15)),
+                    ),
+                  ),
+                ],
               ),
-              const Icon(Icons.chevron_right, color: Colors.white24),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildDicas() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Dicas para comprar melhor',
-              style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(height: 12),
-          ...[
-            {
-              'icone': Icons.compare,
-              'cor': Colors.blue,
-              'titulo': 'Compare preços',
-              'dica':
-                  'Pesquise o mesmo produto em 3 lojas antes de comprar.'
-            },
-            {
-              'icone': Icons.calendar_today,
-              'cor': Colors.green,
-              'titulo': 'Aguarde datas especiais',
-              'dica':
-                  'Black Friday, Dia do Consumidor e aniversários de lojas têm os maiores descontos.'
-            },
-            {
-              'icone': Icons.credit_card_off,
-              'cor': Colors.orange,
-              'titulo': 'Evite parcelas longas',
-              'dica':
-                  'Parcelar em 12x parece fácil, mas você paga mais caro. Prefira à vista quando possível.'
-            },
-            {
-              'icone': Icons.star_outline,
-              'cor': Colors.yellow,
-              'titulo': 'Verifique avaliações',
-              'dica':
-                  'Leia comentários reais de outros compradores antes de decidir.'
-            },
-          ].map((d) => Card(
-                color: const Color(0xFF1A2A3A),
-                margin: const EdgeInsets.only(bottom: 10),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(d['icone'] as IconData,
-                          color: d['cor'] as Color, size: 26),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(d['titulo'] as String,
-                                  style: TextStyle(
-                                      color: d['cor'] as Color,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14)),
-                              const SizedBox(height: 4),
-                              Text(d['dica'] as String,
-                                  style: const TextStyle(
-                                      color: Colors.white70, fontSize: 13)),
-                            ]),
-                      ),
-                    ],
-                  ),
-                ),
-              )),
-        ],
-      ),
+  Widget _placeholder() {
+    return Container(
+      width: double.infinity,
+      height: 160,
+      color: Colors.white10,
+      child: const Icon(Icons.local_offer_outlined,
+          color: Colors.white24, size: 48),
     );
   }
 }
