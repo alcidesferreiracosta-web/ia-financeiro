@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 class OfertasPage extends StatefulWidget {
   const OfertasPage({super.key});
@@ -9,33 +9,56 @@ class OfertasPage extends StatefulWidget {
 
 class _OfertasPageState extends State<OfertasPage> {
   final _searchController = TextEditingController();
-  bool _loading = false;
+  late final WebViewController _webController;
+  bool _webViewVisivel = false;
+  bool _carregando = false;
+  String _queryAtual = '';
 
-  final List<Map<String, dynamic>> _categorias = [
-    {'nome': 'Televisão', 'icone': Icons.tv},
-    {'nome': 'Celular', 'icone': Icons.smartphone},
-    {'nome': 'Notebook', 'icone': Icons.laptop},
-    {'nome': 'Geladeira', 'icone': Icons.kitchen},
-    {'nome': 'Tênis', 'icone': Icons.directions_run},
-    {'nome': 'Perfume', 'icone': Icons.spa},
-    {'nome': 'Fone de ouvido', 'icone': Icons.headphones},
-    {'nome': 'Videogame', 'icone': Icons.sports_esports},
-    {'nome': 'Ar condicionado', 'icone': Icons.ac_unit},
-    {'nome': 'Máquina de lavar', 'icone': Icons.local_laundry_service},
+  static const _categorias = [
+    ('📺 Televisão', 'televisão 4K melhor preço'),
+    ('📱 Celular', 'smartphone melhor custo benefício'),
+    ('💻 Notebook', 'notebook melhor preço'),
+    ('🎮 Videogame', 'console videogame oferta'),
+    ('🍳 Eletrodoméstico', 'eletrodoméstico promoção'),
+    ('❄️ Ar-condicionado', 'ar condicionado split oferta'),
+    ('🛋️ Móveis', 'móveis sala quarto promoção'),
+    ('👟 Tênis', 'tênis melhor preço'),
+    ('🎧 Fone', 'fone bluetooth oferta'),
+    ('📷 Câmera', 'câmera fotográfica melhor preço'),
   ];
 
-  Future<void> _pesquisar(String query) async {
+  @override
+  void initState() {
+    super.initState();
+    _webController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent(
+        'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 '
+        '(KHTML, like Gecko) Chrome/120.0.6099.144 Mobile Safari/537.36',
+      )
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageStarted: (_) => setState(() => _carregando = true),
+        onPageFinished: (_) => setState(() => _carregando = false),
+        onWebResourceError: (_) => setState(() => _carregando = false),
+      ));
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _pesquisar(String query) {
     if (query.trim().isEmpty) return;
-    setState(() => _loading = true);
     final encoded = Uri.encodeComponent(query.trim());
-    final uri = Uri.parse('https://www.google.com/search?q=$encoded&tbm=shop');
-    try {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } catch (_) {
-      final fallback = Uri.parse('https://shopping.google.com/?q=$encoded');
-      await launchUrl(fallback, mode: LaunchMode.externalApplication);
-    }
-    if (mounted) setState(() => _loading = false);
+    final url = 'https://www.google.com/search?q=$encoded&tbm=shop&hl=pt-BR';
+    _webController.loadRequest(Uri.parse(url));
+    setState(() {
+      _webViewVisivel = true;
+      _queryAtual = query.trim();
+    });
+    FocusScope.of(context).unfocus();
   }
 
   @override
@@ -45,138 +68,181 @@ class _OfertasPageState extends State<OfertasPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D1B2A),
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Buscar Ofertas', style: TextStyle(color: Colors.white)),
+        title: const Text('Melhores Ofertas', style: TextStyle(color: Colors.white)),
+        actions: [
+          if (_webViewVisivel)
+            IconButton(
+              icon: const Icon(Icons.grid_view, color: Colors.white54),
+              tooltip: 'Categorias',
+              onPressed: () => setState(() => _webViewVisivel = false),
+            ),
+        ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Barra de pesquisa
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white10,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.shopping_bag_outlined, color: Colors.orange, size: 28),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text('Google Shopping', style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _searchController,
-                    style: const TextStyle(color: Colors.white),
-                    onSubmitted: _pesquisar,
-                    decoration: InputDecoration(
-                      hintText: 'Ex: Televisão 55 polegadas...',
-                      hintStyle: const TextStyle(color: Colors.white38),
-                      filled: true,
-                      fillColor: Colors.white10,
-                      prefixIcon: const Icon(Icons.search, color: Colors.white54),
-                      border: OutlineInputBorder(
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: Colors.white),
+                  textInputAction: TextInputAction.search,
+                  onSubmitted: _pesquisar,
+                  decoration: InputDecoration(
+                    hintText: 'O que você quer comprar?',
+                    hintStyle: const TextStyle(color: Colors.white38),
+                    prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                    filled: true,
+                    fillColor: Colors.white10,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
+                        borderSide: BorderSide.none),
                   ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _loading ? null : () => _pesquisar(_searchController.text),
-                      icon: _loading
-                          ? const SizedBox(width: 18, height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.search),
-                      label: const Text('Buscar as melhores ofertas',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4FC3F7),
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 14),
+                ),
+                onPressed: () => _pesquisar(_searchController.text),
+                child: const Text('Buscar',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ]),
+          ),
+
+          if (_webViewVisivel) ...[
+            if (_carregando)
+              const LinearProgressIndicator(
+                  color: Color(0xFF4FC3F7),
+                  backgroundColor: Colors.transparent),
+            Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(children: [
+                const Icon(Icons.shopping_bag_outlined,
+                    color: Colors.white38, size: 14),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text('Resultados para: "$_queryAtual"',
+                      style: const TextStyle(
+                          color: Colors.white38, fontSize: 12),
+                      overflow: TextOverflow.ellipsis),
+                ),
+              ]),
             ),
-
-            const SizedBox(height: 24),
-            const Text('Categorias populares', style: TextStyle(
-              color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-
-            // Chips de categorias
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _categorias.map((cat) {
-                return ActionChip(
-                  avatar: Icon(cat['icone'] as IconData, size: 16, color: Colors.orange),
-                  label: Text(cat['nome'] as String,
-                      style: const TextStyle(color: Colors.white, fontSize: 13)),
-                  backgroundColor: Colors.white10,
-                  side: const BorderSide(color: Colors.orange, width: 0.5),
-                  onPressed: () {
-                    _searchController.text = cat['nome'] as String;
-                    _pesquisar(cat['nome'] as String);
-                  },
-                );
-              }).toList(),
+            Expanded(
+              child: WebViewWidget(controller: _webController),
             ),
-
-            const SizedBox(height: 24),
-            const Text('Dicas para comprar melhor', style: TextStyle(
-              color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 12),
-
-            ...[
-              {'icone': Icons.compare, 'cor': Colors.blue,
-                'titulo': 'Compare preços', 'dica': 'Pesquise o mesmo produto em 3 lojas antes de comprar.'},
-              {'icone': Icons.calendar_today, 'cor': Colors.green,
-                'titulo': 'Aguarde datas especiais', 'dica': 'Black Friday, Dia do Consumidor e aniversários de lojas têm os maiores descontos.'},
-              {'icone': Icons.credit_card_off, 'cor': Colors.orange,
-                'titulo': 'Evite parcelas longas', 'dica': 'Parcelar em 12x parece fácil, mas você paga mais caro. Prefira à vista quando possível.'},
-              {'icone': Icons.star_outline, 'cor': Colors.yellow,
-                'titulo': 'Verifique avaliações', 'dica': 'Leia comentários reais de outros compradores antes de decidir.'},
-            ].map((d) => Card(
-              color: const Color(0xFF1A2A3A),
-              margin: const EdgeInsets.only(bottom: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Row(
+          ] else ...[
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(d['icone'] as IconData, color: d['cor'] as Color, size: 26),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(d['titulo'] as String,
-                            style: TextStyle(color: d['cor'] as Color,
-                                fontWeight: FontWeight.bold, fontSize: 14)),
-                        const SizedBox(height: 4),
-                        Text(d['dica'] as String,
-                            style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                      ]),
+                    const SizedBox(height: 8),
+                    const Text('Categorias populares',
+                        style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 12),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 2.8,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      itemCount: _categorias.length,
+                      itemBuilder: (ctx, i) {
+                        final (label, query) = _categorias[i];
+                        return InkWell(
+                          onTap: () {
+                            _searchController.text = label.substring(3);
+                            _pesquisar(query);
+                          },
+                          borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white10,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.white12),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(label,
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 13),
+                                textAlign: TextAlign.center),
+                          ),
+                        );
+                      },
                     ),
+                    const SizedBox(height: 24),
+                    const Text('Dicas de compra inteligente',
+                        style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 12),
+                    _Dica('🔍 Compare preços',
+                        'Pesquise em pelo menos 3 lojas antes de comprar'),
+                    const SizedBox(height: 8),
+                    _Dica('⏳ Espere promoções',
+                        'Black Friday e Dia do Consumidor têm descontos reais'),
+                    const SizedBox(height: 8),
+                    _Dica('💳 Prefira PIX ou débito',
+                        'Parcelado tem juros; prefira à vista sempre que possível'),
+                    const SizedBox(height: 8),
+                    _Dica('🏷️ Veja o histórico de preços',
+                        'Use Zoom ou Buscapé para confirmar se o desconto é real'),
                   ],
                 ),
               ),
-            )),
+            ),
           ],
-        ),
+        ],
       ),
+    );
+  }
+}
+
+class _Dica extends StatelessWidget {
+  final String titulo;
+  final String descricao;
+  const _Dica(this.titulo, this.descricao);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white10,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(titulo,
+            style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 13)),
+        const SizedBox(height: 4),
+        Text(descricao,
+            style: const TextStyle(color: Colors.white54, fontSize: 12)),
+      ]),
     );
   }
 }
