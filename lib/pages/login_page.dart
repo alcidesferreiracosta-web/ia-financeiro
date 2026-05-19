@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'criar_conta_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -58,23 +58,27 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _loginFacebook() async {
-    setState(() { _loading = true; _erro = null; });
+    // Facebook login via navegador externo (não requer SDK nativo)
     try {
-      final result = await FacebookAuth.instance.login();
-      if (result.status == LoginStatus.success) {
-        final credential = FacebookAuthProvider.credential(
-          result.accessToken!.tokenString,
-        );
-        await FirebaseAuth.instance.signInWithCredential(credential);
-      } else if (result.status == LoginStatus.cancelled) {
-        // usuário cancelou, não mostra erro
+      final uri = Uri.parse('https://www.facebook.com/login');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        setState(() => _erro = result.message ?? 'Erro no login com Facebook.');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Para ativar login com Facebook, configure seu App ID no Firebase Console.'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
       }
     } catch (e) {
-      setState(() => _erro = 'Configure seu Facebook App ID no Firebase Console.');
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não foi possível abrir o Facebook.')),
+        );
+      }
     }
   }
 
