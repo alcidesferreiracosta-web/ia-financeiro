@@ -74,10 +74,7 @@ Future<List<Map<String, dynamic>>> _buscarML(
   if (res.statusCode != 200) return [];
   final List items = jsonDecode(res.body)['results'] ?? [];
   return items.map<Map<String, dynamic>>((item) {
-    String link = item['permalink'] as String? ?? '';
-    if (_mlAfiliadoId.isNotEmpty) {
-      link += '${link.contains('?') ? '&' : '?'}affiliation_id=$_mlAfiliadoId';
-    }
+    final String link = item['permalink'] as String? ?? '';
     return {
       'titulo': item['title'] ?? '',
       'preco': (item['price'] ?? 0).toDouble(),
