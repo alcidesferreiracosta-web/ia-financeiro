@@ -49,9 +49,23 @@ android {
         multiDexEnabled true
     }
 
+    signingConfigs {
+        release {
+            def keystorePath = System.getenv("KEY_PATH") ?: "ia-financeiro-upload.jks"
+            def keystoreFile = file(keystorePath)
+            if (keystoreFile.exists()) {
+                storeFile keystoreFile
+                storePassword System.getenv("KEY_STORE_PASSWORD") ?: ""
+                keyAlias System.getenv("KEY_ALIAS") ?: "ia-financeiro"
+                keyPassword System.getenv("KEY_PASSWORD") ?: ""
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig signingConfigs.debug
+            def keystoreFile = file(System.getenv("KEY_PATH") ?: "ia-financeiro-upload.jks")
+            signingConfig keystoreFile.exists() ? signingConfigs.release : signingConfigs.debug
             minifyEnabled false
             shrinkResources false
         }
