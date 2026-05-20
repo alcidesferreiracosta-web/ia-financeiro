@@ -1,7 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'score_page.dart';
 
@@ -63,14 +64,32 @@ class _OfertasPageState extends State<OfertasPage> {
     }
     setState(() { _buscando = true; _buscaAtiva = true; });
     try {
-      final fn = FirebaseFunctions.instance.httpsCallable(
-        'buscarML',
-        options: HttpsCallableOptions(timeout: const Duration(seconds: 25)),
+      final uri = Uri.parse(
+        'https://api.mercadolibre.com/sites/MLB/search?q=${Uri.encodeComponent(q)}&limit=15&sort=relevance',
       );
-      final result = await fn.call({'query': q, 'limit': 15});
-      final produtos = (result.data['produtos'] as List)
-          .map((p) => Map<String, dynamic>.from(p as Map))
-          .toList();
+      final response = await http.get(uri).timeout(const Duration(seconds: 20));
+      if (response.statusCode != 200) throw Exception('Status ${response.statusCode}');
+
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      final results = (json['results'] as List? ?? []);
+
+      final produtos = results.map((item) {
+        final permalink = item['permalink'] as String? ?? '';
+        final link = permalink.isEmpty ? '' : '$permalink?affiliation_id=450000067';
+        final thumb = ((item['thumbnail'] as String? ?? '')
+            .replaceAll('http://', 'https://')
+            .replaceFirst(RegExp(r'-[A-Z]\.jpg$'), '-O.jpg'));
+        return <String, dynamic>{
+          'id': item['id'],
+          'titulo': item['title'] ?? '',
+          'preco': (item['price'] as num?)?.toDouble() ?? 0.0,
+          'preco_original': (item['original_price'] as num?)?.toDouble() ?? (item['price'] as num?)?.toDouble() ?? 0.0,
+          'imagem_url': thumb,
+          'link': link,
+          'frete_gratis': (item['shipping'] as Map?)?['free_shipping'] == true,
+        };
+      }).toList();
+
       if (mounted) setState(() { _resultadosBusca = produtos; _buscando = false; });
     } catch (e) {
       if (mounted) {
