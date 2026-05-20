@@ -39,7 +39,7 @@ class _AfiliadosPageState extends State<AfiliadosPage>
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D1B2A),
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Loja de Afiliados',
+        title: const Text('Produtos Recomendados',
             style: TextStyle(color: Colors.white)),
         bottom: TabBar(
           controller: _tab,
@@ -304,7 +304,7 @@ class _TabDigitalState extends State<_TabDigital> {
       children: [
         const Padding(
           padding: EdgeInsets.only(bottom: 10),
-          child: Text('Produtos em destaque — Hotmart',
+          child: Text('Cursos e eBooks em destaque',
               style: TextStyle(color: Colors.white70,
                   fontSize: 13, fontWeight: FontWeight.w600)),
         ),
@@ -354,25 +354,10 @@ class _CardHotmart extends StatelessWidget {
                     style: const TextStyle(color: Colors.white54, fontSize: 12),
                     maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 6),
-                Row(children: [
-                  Text(produto['preco'] as String,
-                      style: const TextStyle(
-                          color: Colors.orange, fontWeight: FontWeight.bold,
-                          fontSize: 14)),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text('${produto['comissao']} comissão',
-                        style: const TextStyle(
-                            color: Colors.green, fontSize: 11,
-                            fontWeight: FontWeight.bold)),
-                  ),
-                ]),
+                Text(produto['preco'] as String,
+                    style: const TextStyle(
+                        color: Colors.orange, fontWeight: FontWeight.bold,
+                        fontSize: 14)),
               ]),
             ),
             const Icon(Icons.chevron_right, color: Colors.white24),
@@ -573,13 +558,13 @@ class _TabFisicoState extends State<_TabFisico> {
         const Icon(Icons.storefront_outlined,
             color: Colors.white24, size: 56),
         const SizedBox(height: 12),
-        const Text('Busque e ganhe comissão automática',
+        const Text('Encontre as melhores ofertas',
             style: TextStyle(color: Colors.white54, fontSize: 15)),
         const SizedBox(height: 18),
         ...[
-          'Mercado Livre: até 12% por venda',
-          'Amazon: até 10% em eletrônicos',
-          'Link de afiliado gerado automaticamente',
+          'Produtos selecionados para você',
+          'Preços competitivos no Mercado Livre',
+          'Entrega rápida e segura',
         ].map((t) => Padding(
           padding: const EdgeInsets.only(bottom: 8),
           child: Row(children: [
