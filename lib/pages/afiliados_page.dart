@@ -240,7 +240,10 @@ class _TabDigitalState extends State<_TabDigital> {
                 hintStyle: const TextStyle(color: Colors.white38),
                 filled: true,
                 fillColor: Colors.white10,
-                prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                prefixIcon: IconButton(
+                  icon: const Icon(Icons.search, color: Colors.white54),
+                  onPressed: () => _buscarDigital(_ctrl.text),
+                ),
                 suffixIcon: _loading
                     ? const Padding(
                         padding: EdgeInsets.all(12),
@@ -456,7 +459,10 @@ class _TabFisicoState extends State<_TabFisico> {
                 hintStyle: const TextStyle(color: Colors.white38),
                 filled: true,
                 fillColor: Colors.white10,
-                prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                prefixIcon: IconButton(
+                  icon: const Icon(Icons.search, color: Colors.white54),
+                  onPressed: () => _buscar(_ctrl.text),
+                ),
                 suffixIcon: _loading
                     ? const Padding(
                         padding: EdgeInsets.all(12),
