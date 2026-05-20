@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 class SubscriptionService {
@@ -13,10 +15,12 @@ class SubscriptionService {
   StreamSubscription<List<PurchaseDetails>>? _sub;
 
   bool _isSubscribed = false;
+  bool _isPremiumFirestore = false;
   bool _isLoading = true;
   String? _error;
 
-  bool get isSubscribed => kDebugMode || _isSubscribed;
+  // Acesso liberado se: debug, Firestore premium, ou Google Play ativo
+  bool get isSubscribed => kDebugMode || _isPremiumFirestore || _isSubscribed;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -25,6 +29,29 @@ class SubscriptionService {
 
   Future<void> init() async {
     if (kDebugMode) {
+      _isLoading = false;
+      return;
+    }
+
+    // Verifica campo premium no Firestore (admin bypass + combo Hotmart)
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final doc = await FirebaseFirestore.instance.collection('usuarios').doc(uid).get();
+        if (doc.exists) {
+          final data = doc.data()!;
+          final premiumUntil = data['premium_until'];
+          if (data['premium'] == true) {
+            _isPremiumFirestore = true;
+          } else if (premiumUntil != null) {
+            final until = (premiumUntil as Timestamp).toDate();
+            _isPremiumFirestore = until.isAfter(DateTime.now());
+          }
+        }
+      }
+    } catch (_) {}
+
+    if (_isPremiumFirestore) {
       _isLoading = false;
       return;
     }
