@@ -55,7 +55,7 @@ class _OfertasPageState extends State<OfertasPage> {
     final q = _searchCtrl.text.trim();
     if (q.isEmpty) return;
     final url = Uri.parse(
-      'https://www.mercadolivre.com.br/search?q=${Uri.encodeComponent(q)}&affiliation_id=450000067',
+      'https://www.mercadolivre.com.br/search?q=${Uri.encodeComponent(q)}',
     );
     try {
       await launchUrl(url, mode: LaunchMode.inAppWebView);
