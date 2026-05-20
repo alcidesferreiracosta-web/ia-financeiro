@@ -39,7 +39,7 @@ class _PaywallPageState extends State<PaywallPage> {
     if (SubscriptionService.instance.isSubscribed) {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainNav()));
     } else {
-      setState(() { _loading = false; _error = 'Nenhuma assinatura ativa encontrada.' });
+      setState(() { _loading = false; _error = 'Nenhuma assinatura ativa encontrada.'; });
     }
   }
 
