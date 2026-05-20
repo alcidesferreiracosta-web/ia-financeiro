@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class DicasIAPage extends StatefulWidget {
   const DicasIAPage({super.key});
@@ -10,7 +10,9 @@ class DicasIAPage extends StatefulWidget {
 
 class _DicasIAPageState extends State<DicasIAPage> {
   bool _loading = true;
-  Map<String, double> _dados = {};
+  String? _erro;
+  double _ganhos = 0, _gastos = 0, _saldo = 0;
+  String _resumo = '';
   List<Map<String, dynamic>> _dicas = [];
 
   @override
@@ -20,39 +22,67 @@ class _DicasIAPageState extends State<DicasIAPage> {
   }
 
   Future<void> _analisar() async {
-    final uid = FirebaseAuth.instance.currentUser!.uid;
-    final ganhos = await FirebaseFirestore.instance.collection('ganhos').where('userId', isEqualTo: uid).get();
-    final gastos = await FirebaseFirestore.instance.collection('gastos').where('userId', isEqualTo: uid).get();
-    double totalGanhos = ganhos.docs.fold(0, (s, d) => s + (d['valor'] as num).toDouble());
-    double totalGastos = gastos.docs.fold(0, (s, d) => s + (d['valor'] as num).toDouble());
-    double saldo = totalGanhos - totalGastos;
-    double taxa = totalGanhos > 0 ? totalGastos / totalGanhos * 100 : 0;
+    setState(() { _loading = true; _erro = null; });
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+      final fn = FirebaseFunctions.instance.httpsCallable(
+        'dicasFinanceiras',
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 30)),
+      );
+      final result = await fn.call({'uid': uid});
+      final data = Map<String, dynamic>.from(result.data as Map);
 
-    final dicas = <Map<String, dynamic>>[];
+      final dicas = (data['dicas'] as List).map((d) {
+        final m = Map<String, dynamic>.from(d as Map);
+        return {
+          'titulo': m['titulo'] ?? '',
+          'descricao': m['descricao'] ?? '',
+          'tipo': m['tipo'] ?? 'dica',
+          'prioridade': m['prioridade'] ?? 'media',
+        };
+      }).toList();
 
-    if (taxa > 80) {
-      dicas.add({'icone': Icons.warning_amber, 'cor': Colors.red, 'titulo': 'Gastos Elevados',
-          'descricao': 'Você está gastando ${taxa.toStringAsFixed(0)}% dos seus ganhos. Revise gastos desnecessários.'});
-    } else if (taxa > 50) {
-      dicas.add({'icone': Icons.info_outline, 'cor': Colors.orange, 'titulo': 'Controle Moderado',
-          'descricao': 'Gastos em ${taxa.toStringAsFixed(0)}% dos ganhos. Há espaço para economizar mais.'});
-    } else {
-      dicas.add({'icone': Icons.check_circle_outline, 'cor': Colors.green, 'titulo': 'Ótimo Controle!',
-          'descricao': 'Você está gastando apenas ${taxa.toStringAsFixed(0)}% dos seus ganhos. Continue assim!'});
+      if (mounted) {
+        setState(() {
+          _ganhos = (data['ganhos'] as num?)?.toDouble() ?? 0;
+          _gastos = (data['gastos'] as num?)?.toDouble() ?? 0;
+          _saldo = (data['saldo'] as num?)?.toDouble() ?? 0;
+          _resumo = data['resumo'] as String? ?? '';
+          _dicas = dicas;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() { _erro = 'Erro ao gerar dicas. Verifique sua internet.'; _loading = false; });
+      }
     }
+  }
 
-    if (saldo > 0) {
-      dicas.add({'icone': Icons.savings_outlined, 'cor': Colors.blue, 'titulo': 'Invista o Saldo',
-          'descricao': 'Você tem R\$ ${saldo.toStringAsFixed(2).replaceAll('.', ',')} disponível. Considere o Tesouro Selic ou CDB.'});
+  Color _corTipo(String tipo) {
+    switch (tipo) {
+      case 'alerta': return Colors.red;
+      case 'conquista': return Colors.green;
+      case 'meta': return Colors.blue;
+      default: return Colors.orange;
     }
+  }
 
-    dicas.add({'icone': Icons.lightbulb_outline, 'cor': Colors.yellow, 'titulo': 'Regra 50/30/20',
-        'descricao': 'Distribua: 50% para necessidades, 30% para desejos, 20% para poupança e investimentos.'});
+  IconData _iconeTipo(String tipo) {
+    switch (tipo) {
+      case 'alerta': return Icons.warning_amber_rounded;
+      case 'conquista': return Icons.check_circle_outline;
+      case 'meta': return Icons.flag_outlined;
+      default: return Icons.lightbulb_outline;
+    }
+  }
 
-    dicas.add({'icone': Icons.calendar_today_outlined, 'cor': Colors.teal, 'titulo': 'Reserva de Emergência',
-        'descricao': 'Mantenha 6 meses de despesas guardadas. Meta: R\$ ${(totalGastos * 6).toStringAsFixed(2).replaceAll('.', ',')}.'});
-
-    setState(() { _dados = {'ganhos': totalGanhos, 'gastos': totalGastos, 'saldo': saldo, 'taxa': taxa}; _dicas = dicas; _loading = false; });
+  Color _corPrioridade(String p) {
+    switch (p) {
+      case 'alta': return Colors.red.shade300;
+      case 'baixa': return Colors.green.shade300;
+      default: return Colors.orange.shade300;
+    }
   }
 
   @override
@@ -62,49 +92,128 @@ class _DicasIAPageState extends State<DicasIAPage> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0D1B2A),
         iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Dicas IA', style: TextStyle(color: Colors.white)),
+        title: const Row(children: [
+          Icon(Icons.psychology, color: Colors.orange, size: 20),
+          SizedBox(width: 8),
+          Text('Dicas IA', style: TextStyle(color: Colors.white)),
+        ]),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white54),
+            onPressed: _loading ? null : _analisar,
+          ),
+        ],
       ),
       body: _loading
           ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              CircularProgressIndicator(), SizedBox(height: 16),
-              Text('Analisando suas finanças...', style: TextStyle(color: Colors.white54)),
+              CircularProgressIndicator(color: Colors.orange),
+              SizedBox(height: 16),
+              Text('Gemini analisando suas finanças...', style: TextStyle(color: Colors.white54)),
+              SizedBox(height: 6),
+              Text('Isso pode levar alguns segundos', style: TextStyle(color: Colors.white30, fontSize: 12)),
             ]))
-          : ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                Container(
+          : _erro != null
+              ? Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Icon(Icons.cloud_off, color: Colors.white38, size: 48),
+                  const SizedBox(height: 16),
+                  Text(_erro!, style: const TextStyle(color: Colors.white54), textAlign: TextAlign.center),
+                  const SizedBox(height: 20),
+                  ElevatedButton(onPressed: _analisar, child: const Text('Tentar novamente')),
+                ]))
+              : ListView(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF1A237E), Color(0xFF7B1FA2)]),
-                      borderRadius: BorderRadius.circular(16)),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('Análise de Saúde Financeira', style: TextStyle(color: Colors.white70, fontSize: 13)),
-                    const SizedBox(height: 8),
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      _Stat('Ganhos', 'R\$ ${_dados['ganhos']!.toStringAsFixed(0)}', Colors.green),
-                      _Stat('Gastos', 'R\$ ${_dados['gastos']!.toStringAsFixed(0)}', Colors.red),
-                      _Stat('Saldo', 'R\$ ${_dados['saldo']!.toStringAsFixed(0)}', Colors.blue),
+                  children: [
+                    // Painel resumo financeiro
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFF1A237E), Color(0xFF7B1FA2)]),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const Text('Análise de Saúde Financeira', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                        const SizedBox(height: 10),
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                          _Stat('Ganhos', 'R\$ ${_ganhos.toStringAsFixed(0)}', Colors.green),
+                          _Stat('Gastos', 'R\$ ${_gastos.toStringAsFixed(0)}', Colors.red),
+                          _Stat('Saldo', 'R\$ ${_saldo.toStringAsFixed(0)}',
+                              _saldo >= 0 ? Colors.lightBlueAccent : Colors.red),
+                        ]),
+                        if (_resumo.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white10,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(children: [
+                              const Icon(Icons.psychology, color: Colors.orange, size: 16),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(_resumo,
+                                  style: const TextStyle(color: Colors.white70, fontSize: 12, fontStyle: FontStyle.italic))),
+                            ]),
+                          ),
+                        ],
+                      ]),
+                    ),
+
+                    const SizedBox(height: 20),
+                    Row(children: [
+                      const Text('Dicas Personalizadas', style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.orange.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
+                        child: const Text('Gemini AI', style: TextStyle(color: Colors.orange, fontSize: 10)),
+                      ),
                     ]),
-                  ]),
+                    const SizedBox(height: 12),
+
+                    ..._dicas.map((d) {
+                      final tipo = d['tipo'] as String;
+                      final prioridade = d['prioridade'] as String;
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white10,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border(left: BorderSide(color: _corTipo(tipo), width: 3)),
+                        ),
+                        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Icon(_iconeTipo(tipo), color: _corTipo(tipo), size: 26),
+                          const SizedBox(width: 12),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Row(children: [
+                              Expanded(child: Text(d['titulo'],
+                                  style: TextStyle(color: _corTipo(tipo), fontWeight: FontWeight.bold, fontSize: 14))),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: _corPrioridade(prioridade).withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(prioridade,
+                                    style: TextStyle(color: _corPrioridade(prioridade), fontSize: 10)),
+                              ),
+                            ]),
+                            const SizedBox(height: 6),
+                            Text(d['descricao'],
+                                style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4)),
+                          ])),
+                        ]),
+                      );
+                    }),
+
+                    const SizedBox(height: 8),
+                    Center(child: TextButton.icon(
+                      onPressed: _analisar,
+                      icon: const Icon(Icons.refresh, size: 16, color: Colors.white38),
+                      label: const Text('Atualizar análise', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                    )),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                const Text('Dicas Personalizadas', style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 12),
-                ..._dicas.map((d) => Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Icon(d['icone'] as IconData, color: d['cor'] as Color, size: 28),
-                    const SizedBox(width: 12),
-                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(d['titulo'], style: TextStyle(color: d['cor'] as Color, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Text(d['descricao'], style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                    ])),
-                  ]),
-                )),
-              ],
-            ),
     );
   }
 }
