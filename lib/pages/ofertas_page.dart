@@ -1,8 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'score_page.dart';
 
@@ -38,9 +36,6 @@ class _OfertasPageState extends State<OfertasPage> {
   late final Stream<QuerySnapshot> _gastosStream;
 
   final _searchCtrl = TextEditingController();
-  bool _buscando = false;
-  List<Map<String, dynamic>> _resultadosBusca = [];
-  bool _buscaAtiva = false;
 
   @override
   void initState() {
@@ -58,59 +53,13 @@ class _OfertasPageState extends State<OfertasPage> {
 
   Future<void> _buscar() async {
     final q = _searchCtrl.text.trim();
-    if (q.isEmpty) {
-      setState(() { _buscaAtiva = false; _resultadosBusca = []; });
-      return;
-    }
-    setState(() { _buscando = true; _buscaAtiva = true; });
+    if (q.isEmpty) return;
+    final url = Uri.parse(
+      'https://www.mercadolivre.com.br/search?q=${Uri.encodeComponent(q)}&affiliation_id=450000067',
+    );
     try {
-      final uri = Uri.parse(
-        'https://api.mercadolibre.com/sites/MLB/search?q=${Uri.encodeComponent(q)}&limit=15&sort=relevance',
-      );
-      final response = await http.get(uri, headers: {
-        'User-Agent': 'IA-Financeiro/1.0',
-        'Accept': 'application/json',
-      }).timeout(const Duration(seconds: 30));
-      if (response.statusCode != 200) throw Exception('Erro ${response.statusCode} — tente novamente');
-
-      final json = jsonDecode(response.body) as Map<String, dynamic>;
-      final results = (json['results'] as List? ?? []);
-
-      final produtos = results.map((item) {
-        final permalink = item['permalink'] as String? ?? '';
-        final link = permalink.isEmpty ? '' : '$permalink?affiliation_id=450000067';
-        final thumb = ((item['thumbnail'] as String? ?? '')
-            .replaceAll('http://', 'https://')
-            .replaceFirst(RegExp(r'-[A-Z]\.jpg$'), '-O.jpg'));
-        return <String, dynamic>{
-          'id': item['id'],
-          'titulo': item['title'] ?? '',
-          'preco': (item['price'] as num?)?.toDouble() ?? 0.0,
-          'preco_original': (item['original_price'] as num?)?.toDouble() ?? (item['price'] as num?)?.toDouble() ?? 0.0,
-          'imagem_url': thumb,
-          'link': link,
-          'frete_gratis': (item['shipping'] as Map?)?['free_shipping'] == true,
-        };
-      }).toList();
-
-      if (mounted) setState(() { _resultadosBusca = produtos; _buscando = false; });
-    } catch (e) {
-      if (mounted) {
-        setState(() { _buscando = false; _buscaAtiva = true; _resultadosBusca = []; });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Falha na busca: $e'),
-            backgroundColor: Colors.redAccent,
-            duration: const Duration(seconds: 5),
-          ),
-        );
-      }
-    }
-  }
-
-  void _limparBusca() {
-    _searchCtrl.clear();
-    setState(() { _buscaAtiva = false; _resultadosBusca = []; });
+      await launchUrl(url, mode: LaunchMode.inAppWebView);
+    } catch (_) {}
   }
 
   void _abrirLink(String url) async {
@@ -161,12 +110,7 @@ class _OfertasPageState extends State<OfertasPage> {
                         hintText: 'Buscar qualquer produto no Mercado Livre...',
                         hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
                         prefixIcon: const Icon(Icons.search, color: Colors.white38, size: 20),
-                        suffixIcon: _buscaAtiva
-                            ? IconButton(
-                                icon: const Icon(Icons.close, color: Colors.white38, size: 18),
-                                onPressed: _limparBusca,
-                              )
-                            : null,
+                        suffixIcon: null,
                         filled: true,
                         fillColor: Colors.white10,
                         contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -176,13 +120,11 @@ class _OfertasPageState extends State<OfertasPage> {
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
-                    onTap: _buscando ? null : _buscar,
+                    onTap: _buscar,
                     child: Container(
                       padding: const EdgeInsets.all(11),
                       decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(12)),
-                      child: _buscando
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Icon(Icons.search, color: Colors.white, size: 20),
+                      child: const Icon(Icons.search, color: Colors.white, size: 20),
                     ),
                   ),
                 ]),
@@ -190,21 +132,13 @@ class _OfertasPageState extends State<OfertasPage> {
 
               // ── Conteúdo ──
               Expanded(
-                child: _buscaAtiva
-                    ? _ResultadosBusca(
-                        produtos: _resultadosBusca,
-                        buscando: _buscando,
-                        saldo: saldo,
-                        ganhos: ganhos,
-                        onAbrir: _abrirLink,
-                      )
-                    : _OfertasFirestore(
-                        saldo: saldo,
-                        score: score,
-                        ganhos: ganhos,
-                        gastos: gastos,
-                        onAbrir: _abrirLink,
-                      ),
+                child: _OfertasFirestore(
+                  saldo: saldo,
+                  score: score,
+                  ganhos: ganhos,
+                  gastos: gastos,
+                  onAbrir: _abrirLink,
+                ),
               ),
             ]);
           },
@@ -497,7 +431,7 @@ class _EbookCard extends StatelessWidget {
     final descricao = data['descricao'] as String? ?? '';
     final preco = (data['preco'] as num?)?.toDouble() ?? 0;
     final precoOrig = (data['preco_original'] as num?)?.toDouble() ?? 0;
-    final imagem = data['imagem_url'] as String? ?? '';
+    final imagem = data['imagem'] as String? ?? data['imagem_url'] as String? ?? '';
     final link = data['link_afiliado'] as String? ?? data['link_redirect'] as String? ?? '';
     final desc = precoOrig > preco ? ((precoOrig - preco) / precoOrig * 100).toInt() : 0;
 
@@ -573,7 +507,7 @@ class _CardOfertaInteligente extends StatelessWidget {
     final titulo = data['titulo'] as String? ?? '';
     final preco = (data['preco'] as num?)?.toDouble() ?? 0;
     final precoOrig = (data['preco_original'] as num?)?.toDouble() ?? 0;
-    final imagem = data['imagem_url'] as String? ?? '';
+    final imagem = data['imagem'] as String? ?? data['imagem_url'] as String? ?? '';
     final freteGratis = data['frete_gratis'] as bool? ?? false;
     final link = data['link_afiliado'] as String? ?? data['link_redirect'] as String? ?? '';
     final verd = _iaVeredicto(preco, saldo, ganhos);
