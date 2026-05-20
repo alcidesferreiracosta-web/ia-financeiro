@@ -11,6 +11,7 @@ import 'dicas_ia_page.dart';
 import 'investimentos_page.dart';
 import 'planejamento_page.dart';
 import 'afiliados_page.dart';
+import 'renda_extra_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -397,6 +398,16 @@ class _HomePageState extends State<HomePage> {
                                 cor: const Color(0xFF7B1FA2),
                                 onTap: () => _ir(const AfiliadosPage()))),
                       ]),
+
+                      const SizedBox(height: 10),
+
+                      _NavBtn(
+                        label: 'Renda Extra — 20 oportunidades',
+                        icon: Icons.rocket_launch_outlined,
+                        cor: Colors.green,
+                        largo: true,
+                        onTap: () => _ir(const RendaExtraPage()),
+                      ),
                     ],
                   ),
                 );
