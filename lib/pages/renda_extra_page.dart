@@ -68,7 +68,7 @@ const _oportunidades = [
     requisitos: 'Bike ou moto, smartphone',
     categoria: 'Transporte',
     icone: Icons.pedal_bike, cor: Color(0xFFFF441A),
-    url: 'https://rappitendero.com.br/',
+    url: 'https://rappitendero.com/',
     dificuldade: 'Fácil',
   ),
   _Oportunidade(
@@ -78,7 +78,7 @@ const _oportunidades = [
     requisitos: 'Moto ou carro, CNH',
     categoria: 'Transporte',
     icone: Icons.local_shipping, cor: Color(0xFF00B4D8),
-    url: 'https://www.loggi.com/parceiros/',
+    url: 'https://www.loggi.com/motoristas/',
     dificuldade: 'Fácil',
   ),
   _Oportunidade(
