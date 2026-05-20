@@ -10,7 +10,6 @@ import 'sair_dividas_page.dart';
 import 'dicas_ia_page.dart';
 import 'investimentos_page.dart';
 import 'planejamento_page.dart';
-import 'afiliados_page.dart';
 import 'renda_extra_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -390,13 +389,6 @@ class _HomePageState extends State<HomePage> {
                                 icon: Icons.lightbulb_outline,
                                 cor: Colors.amber,
                                 onTap: () => _ir(const DicasIAPage()))),
-                        const SizedBox(width: 10),
-                        Expanded(
-                            child: _NavBtn(
-                                label: 'Afiliados',
-                                icon: Icons.storefront_outlined,
-                                cor: const Color(0xFF7B1FA2),
-                                onTap: () => _ir(const AfiliadosPage()))),
                       ]),
 
                       const SizedBox(height: 10),
