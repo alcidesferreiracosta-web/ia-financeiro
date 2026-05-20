@@ -65,15 +65,20 @@ class _OfertasPageState extends State<OfertasPage> {
     try {
       final fn = FirebaseFunctions.instance.httpsCallable(
         'buscarML',
-        options: HttpsCallableOptions(timeout: const Duration(seconds: 20)),
+        options: HttpsCallableOptions(timeout: const Duration(seconds: 25)),
       );
       final result = await fn.call({'query': q, 'limit': 15});
       final produtos = (result.data['produtos'] as List)
           .map((p) => Map<String, dynamic>.from(p as Map))
           .toList();
       if (mounted) setState(() { _resultadosBusca = produtos; _buscando = false; });
-    } catch (_) {
-      if (mounted) setState(() { _buscando = false; _resultadosBusca = []; });
+    } catch (e) {
+      if (mounted) {
+        setState(() { _buscando = false; _buscaAtiva = false; _resultadosBusca = []; });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro na busca: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
     }
   }
 
