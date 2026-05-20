@@ -122,7 +122,7 @@ class _AssistentePageState extends State<AssistentePage> {
           // Sugestões rápidas
           if (_msgs.length <= 1)
             SizedBox(
-              height: 40,
+              height: 48,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -134,9 +134,11 @@ class _AssistentePageState extends State<AssistentePage> {
                 ].map((s) => Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: ActionChip(
-                    label: Text(s, style: const TextStyle(color: Colors.white, fontSize: 12)),
-                    backgroundColor: Colors.white10,
-                    side: const BorderSide(color: Colors.orange, width: 0.5),
+                    label: Text(s),
+                    labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
+                    backgroundColor: const Color(0xFF1A2A3A),
+                    side: const BorderSide(color: Colors.orange, width: 0.8),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     onPressed: () {
                       _controller.text = s;
                       _enviar();

@@ -67,8 +67,11 @@ class _OfertasPageState extends State<OfertasPage> {
       final uri = Uri.parse(
         'https://api.mercadolibre.com/sites/MLB/search?q=${Uri.encodeComponent(q)}&limit=15&sort=relevance',
       );
-      final response = await http.get(uri).timeout(const Duration(seconds: 20));
-      if (response.statusCode != 200) throw Exception('Status ${response.statusCode}');
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'IA-Financeiro/1.0',
+        'Accept': 'application/json',
+      }).timeout(const Duration(seconds: 30));
+      if (response.statusCode != 200) throw Exception('Erro ${response.statusCode} — tente novamente');
 
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       final results = (json['results'] as List? ?? []);
@@ -93,9 +96,13 @@ class _OfertasPageState extends State<OfertasPage> {
       if (mounted) setState(() { _resultadosBusca = produtos; _buscando = false; });
     } catch (e) {
       if (mounted) {
-        setState(() { _buscando = false; _buscaAtiva = false; _resultadosBusca = []; });
+        setState(() { _buscando = false; _buscaAtiva = true; _resultadosBusca = []; });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro na busca: $e'), backgroundColor: Colors.redAccent),
+          SnackBar(
+            content: Text('Falha na busca: $e'),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     }
