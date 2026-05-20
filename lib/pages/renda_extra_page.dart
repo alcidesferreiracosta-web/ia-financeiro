@@ -289,7 +289,7 @@ class _RendaExtraPageState extends State<RendaExtraPage> {
               const Icon(Icons.trending_up, color: Colors.white, size: 36),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('${_oportunidades.length} formas de ganhar mais',
+                Text('${_oportunidades.length} formas de ganhar mais',
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
                 const SizedBox(height: 2),
                 Text('Selecione e comece hoje mesmo',

@@ -238,7 +238,7 @@ class _BubbleMensagem extends StatelessWidget {
               child: Text(
                 texto,
                 style: TextStyle(
-                  color: isUser ? Colors.white : Colors.white87,
+                  color: isUser ? Colors.white : Colors.white70,
                   fontSize: 14,
                   height: 1.5,
                 ),
