@@ -3,429 +3,284 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IA Financeiro — Controle sua vida financeira com Inteligência Artificial</title>
-  <meta name="description" content="App de finanças pessoais com IA + eBook exclusivo. Controle seus gastos, descubra renda extra e deixe a inteligência artificial trabalhar pelo seu dinheiro.">
-  <meta property="og:title" content="IA Financeiro — Finanças com Inteligência Artificial">
-  <meta property="og:description" content="App + eBook para transformar sua vida financeira com IA">
-  <meta property="og:image" content="https://alcidesferreiracosta-web.github.io/ia-financeiro/og-image.png">
+  <title>IA Financeiro — 3 eBooks que Transformam Suas Finanças com Inteligência Artificial</title>
+  <meta name="description" content="3 eBooks com IA para organizar, criar renda extra e investir. Método de 30 dias. Acesso imediato. Garantia de 7 dias.">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0D1B2A; color: #fff; line-height: 1.6; }
-    a { text-decoration: none; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#080f1a;color:#fff;line-height:1.6}
+    a{text-decoration:none}
 
     /* HERO */
-    .hero {
-      background: linear-gradient(135deg, #0D1B2A 0%, #1A237E 50%, #4A148C 100%);
-      padding: 50px 20px 60px;
-      text-align: center;
-    }
-    .logo {
-      width: 80px; height: 80px;
-      background: linear-gradient(135deg, #1A237E, #4A148C);
-      border-radius: 20px;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 40px; margin-bottom: 20px;
-      box-shadow: 0 8px 32px rgba(74,20,140,0.4);
-    }
-    .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 12px; }
-    .hero h1 span { color: #FF9800; }
-    .hero p { font-size: 1.1rem; color: rgba(255,255,255,0.75); max-width: 480px; margin: 0 auto 28px; }
-    .badge-free {
-      display: inline-block;
-      background: #4CAF50; color: #fff;
-      padding: 6px 16px; border-radius: 20px;
-      font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px;
-      margin-bottom: 8px;
-    }
+    .hero{background:linear-gradient(160deg,#080f1a 0%,#0d1f3c 50%,#0a1a10 100%);padding:56px 20px 48px;text-align:center}
+    .hero-badge{display:inline-block;background:rgba(0,230,118,0.12);border:1px solid #00e676;color:#00e676;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:6px 16px;border-radius:20px;margin-bottom:20px}
+    .hero h1{font-size:clamp(26px,7vw,50px);font-weight:900;line-height:1.15;margin-bottom:16px}
+    .hero h1 em{color:#00e676;font-style:normal}
+    .hero .sub{font-size:clamp(15px,3vw,19px);color:#90a4ae;max-width:520px;margin:0 auto 28px}
+    .arrow{font-size:26px;display:block;animation:bounce 1.4s infinite}
+    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
 
-    /* SOCIAL PROOF */
-    .social-proof { background: #0A1628; padding: 18px 20px; text-align: center; }
-    .social-proof p { color: rgba(255,255,255,0.5); font-size: 0.85rem; }
-    .stars { color: #FF9800; font-size: 1.2rem; margin-bottom: 4px; }
+    /* PROOF BAR */
+    .proof-bar{background:#0b1524;padding:14px 20px;display:flex;justify-content:center;gap:28px;flex-wrap:wrap;border-top:1px solid #1a2a40;border-bottom:1px solid #1a2a40}
+    .proof-item{text-align:center}
+    .proof-item strong{display:block;font-size:20px;font-weight:900;color:#00e676}
+    .proof-item span{font-size:11px;color:#546e7a}
 
-    /* SECTION TITLE */
-    .section { padding: 48px 20px; max-width: 600px; margin: 0 auto; }
-    .section-title { text-align: center; margin-bottom: 32px; }
-    .section-title h2 { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
-    .section-title p { color: rgba(255,255,255,0.55); font-size: 0.95rem; }
+    /* PAIN */
+    .pain{background:#0b1524;padding:52px 20px;text-align:center}
+    .pain h2{font-size:clamp(18px,4vw,30px);font-weight:800;margin-bottom:24px}
+    .pain-list{list-style:none;max-width:460px;margin:0 auto;text-align:left}
+    .pain-list li{padding:11px 0;font-size:15px;color:#78909c;border-bottom:1px solid #111e2e}
+    .pain-list li::before{content:"❌  "}
+    .pain-solve{margin-top:28px;font-size:18px;font-weight:800;color:#00e676}
 
-    /* CARDS DE OFERTA */
-    .offers { padding: 0 20px 48px; max-width: 600px; margin: 0 auto; }
-    .offer-card {
-      border-radius: 20px; padding: 28px 24px;
-      margin-bottom: 20px; position: relative; overflow: hidden;
-    }
-    .offer-card.app {
-      background: linear-gradient(135deg, #1A237E, #283593);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .offer-card.ebook {
-      background: linear-gradient(135deg, #4A148C, #6A1B9A);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .offer-card.combo {
-      background: linear-gradient(135deg, #E65100, #FF6D00);
-      border: 2px solid #FF9800;
-    }
-    .tag {
-      display: inline-block; padding: 4px 12px;
-      border-radius: 20px; font-size: 0.75rem; font-weight: 700;
-      margin-bottom: 14px; letter-spacing: 0.5px;
-    }
-    .tag.green { background: rgba(76,175,80,0.25); color: #81C784; }
-    .tag.purple { background: rgba(255,255,255,0.15); color: #fff; }
-    .tag.hot { background: #fff; color: #E65100; }
-    .offer-card h3 { font-size: 1.3rem; font-weight: 800; margin-bottom: 6px; }
-    .offer-card .desc { color: rgba(255,255,255,0.8); font-size: 0.9rem; margin-bottom: 18px; }
-    .price { margin-bottom: 20px; }
-    .price .amount { font-size: 2.4rem; font-weight: 900; }
-    .price .period { font-size: 0.9rem; color: rgba(255,255,255,0.7); }
-    .price .from { font-size: 0.8rem; color: rgba(255,255,255,0.5); text-decoration: line-through; }
-    .price .trial { font-size: 0.8rem; color: #81C784; margin-top: 2px; }
-    .benefits { list-style: none; margin-bottom: 22px; }
-    .benefits li { padding: 5px 0; font-size: 0.9rem; color: rgba(255,255,255,0.85); }
-    .benefits li::before { content: "✓ "; color: #81C784; font-weight: 700; }
-    .btn {
-      display: block; width: 100%;
-      padding: 16px; border-radius: 12px;
-      font-size: 1rem; font-weight: 800;
-      text-align: center; cursor: pointer;
-      border: none; transition: transform 0.15s, opacity 0.15s;
-    }
-    .btn:active { transform: scale(0.97); opacity: 0.9; }
-    .btn-white { background: #fff; color: #1A237E; }
-    .btn-orange { background: #FF9800; color: #fff; }
-    .btn-dark { background: rgba(0,0,0,0.3); color: #fff; border: 2px solid rgba(255,255,255,0.4); }
-    .btn-sub { display: block; text-align: center; font-size: 0.78rem; color: rgba(255,255,255,0.5); margin-top: 10px; }
+    /* EBOOKS SECTION */
+    .ebooks{padding:56px 20px;max-width:860px;margin:0 auto}
+    .sec-title{text-align:center;font-size:clamp(20px,5vw,34px);font-weight:900;margin-bottom:44px}
+    .sec-title em{color:#00e676;font-style:normal}
 
-    /* MOST POPULAR BADGE */
-    .popular-badge {
-      position: absolute; top: 0; right: 24px;
-      background: #FF9800; color: #fff;
-      padding: 4px 14px; border-radius: 0 0 12px 12px;
-      font-size: 0.75rem; font-weight: 700;
-    }
+    /* CARD */
+    .card{background:linear-gradient(140deg,#0d1f3c,#080f1a);border:1px solid #1a2a40;border-radius:22px;padding:34px 26px;margin-bottom:28px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s}
+    .card:hover{transform:translateY(-5px);box-shadow:0 24px 64px rgba(0,0,0,.5)}
+    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;border-radius:22px 22px 0 0}
+    .c1::before{background:linear-gradient(90deg,#00e676,#00b0ff)}
+    .c1:hover{border-color:#00e676}
+    .c2::before{background:linear-gradient(90deg,#ffa726,#ff7043)}
+    .c2:hover{border-color:#ffa726}
+    .c3::before{background:linear-gradient(90deg,#ab47bc,#ec407a)}
+    .c3:hover{border-color:#ab47bc}
 
-    /* BENEFÍCIOS */
-    .benefits-grid { padding: 0 20px 48px; max-width: 600px; margin: 0 auto; }
-    .benefit-item {
-      display: flex; align-items: flex-start; gap: 14px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 14px; padding: 16px;
-      margin-bottom: 12px;
-      border: 1px solid rgba(255,255,255,0.07);
-    }
-    .benefit-icon { font-size: 1.8rem; flex-shrink: 0; }
-    .benefit-item h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 2px; }
-    .benefit-item p { font-size: 0.85rem; color: rgba(255,255,255,0.55); }
+    .hot-tag{position:absolute;top:18px;right:18px;background:#ff1744;color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:20px;letter-spacing:1px}
+    .card-num{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+    .c1 .card-num{color:#00e676}.c2 .card-num{color:#ffa726}.c3 .card-num{color:#ab47bc}
+    .card h3{font-size:clamp(17px,3vw,22px);font-weight:900;margin-bottom:10px}
+    .card>.desc{color:#78909c;font-size:14px;margin-bottom:18px}
+    .feats{list-style:none;margin-bottom:26px}
+    .feats li{padding:7px 0;font-size:14px;color:#b0bec5;border-bottom:1px solid #0f1e30}
+    .feats li::before{content:"✅  "}
+
+    /* URGENCY */
+    .urgency{background:rgba(255,23,68,0.08);border:1px solid rgba(255,23,68,0.3);border-radius:10px;padding:12px 16px;text-align:center;font-size:13px;color:#ff8a80;margin-bottom:18px}
+    .urgency strong{color:#ff1744}
+
+    /* PRICE */
+    .price-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+    .price{font-size:34px;font-weight:900}
+    .c1 .price{color:#00e676}.c2 .price{color:#ffa726}.c3 .price{color:#ab47bc}
+    .old-price{font-size:14px;color:#37474f;text-decoration:line-through}
+    .disc-badge{font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px}
+    .c1 .disc-badge{background:rgba(0,230,118,.12);color:#00e676;border:1px solid #00e676}
+    .c2 .disc-badge{background:rgba(255,167,38,.12);color:#ffa726;border:1px solid #ffa726}
+    .c3 .disc-badge{background:rgba(171,71,188,.12);color:#ab47bc;border:1px solid #ab47bc}
+
+    /* BUTTONS */
+    .btn{display:block;text-align:center;padding:17px 22px;border-radius:13px;font-size:16px;font-weight:900;letter-spacing:.3px;transition:all .18s}
+    .btn:hover{opacity:.9;transform:scale(1.02)}
+    .btn1{background:linear-gradient(135deg,#00e676,#00b0ff);color:#060f18}
+    .btn2{background:linear-gradient(135deg,#ffa726,#ff7043);color:#060f18}
+    .btn3{background:linear-gradient(135deg,#ab47bc,#ec407a);color:#fff}
+    .btn-note{text-align:center;font-size:11px;color:#37474f;margin-top:9px}
+
+    /* GUARANTEE */
+    .guarantee{background:#0b1524;padding:52px 20px;text-align:center}
+    .gbox{max-width:480px;margin:0 auto;background:linear-gradient(140deg,#0d1f3c,#080f1a);border:1px solid #1a2a40;border-radius:22px;padding:36px 28px}
+    .gbox .icon{font-size:52px;margin-bottom:14px}
+    .gbox h3{font-size:22px;font-weight:900;margin-bottom:10px}
+    .gbox p{color:#78909c;font-size:14px}
+
+    /* APP BONUS */
+    .bonus{padding:52px 20px;text-align:center;max-width:660px;margin:0 auto}
+    .bonus h2{font-size:clamp(20px,4vw,30px);font-weight:900;margin-bottom:14px}
+    .bonus p{color:#78909c;font-size:15px;margin-bottom:22px}
+    .app-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+    .chip{background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.25);color:#00e676;padding:7px 15px;border-radius:20px;font-size:13px;font-weight:600}
 
     /* FAQ */
-    .faq { padding: 0 20px 48px; max-width: 600px; margin: 0 auto; }
-    .faq-item {
-      background: rgba(255,255,255,0.04);
-      border-radius: 12px; padding: 16px 18px;
-      margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.07);
-    }
-    .faq-item h4 { font-size: 0.9rem; font-weight: 700; color: #FF9800; margin-bottom: 6px; }
-    .faq-item p { font-size: 0.85rem; color: rgba(255,255,255,0.65); }
+    .faq-wrap{background:#0b1524;padding:52px 20px}
+    .faq{max-width:660px;margin:0 auto}
+    .faq-item{border-bottom:1px solid #1a2a40;padding:18px 0}
+    .faq-item h4{font-size:15px;font-weight:700;color:#e0e0e0;margin-bottom:7px}
+    .faq-item p{color:#78909c;font-size:13px}
 
     /* CTA FINAL */
-    .cta-final {
-      background: linear-gradient(135deg, #1A237E, #4A148C);
-      padding: 48px 20px; text-align: center;
-    }
-    .cta-final h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 10px; }
-    .cta-final p { color: rgba(255,255,255,0.7); margin-bottom: 24px; }
+    .cta-final{background:linear-gradient(140deg,#0d1f3c,#0a1a10);padding:56px 20px;text-align:center}
+    .cta-final h2{font-size:clamp(22px,5vw,38px);font-weight:900;margin-bottom:14px}
+    .cta-final h2 em{color:#00e676;font-style:normal}
+    .cta-final p{color:#90a4ae;margin-bottom:32px;font-size:15px}
+    .cta-stack{display:flex;flex-direction:column;gap:14px;max-width:380px;margin:0 auto}
 
-    /* WHATSAPP FLOAT */
-    .whatsapp-btn {
-      position: fixed; bottom: 20px; right: 20px;
-      background: #25D366; color: #fff;
-      width: 56px; height: 56px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.6rem; box-shadow: 0 4px 16px rgba(37,211,102,0.5);
-      z-index: 999;
-    }
-
-    /* FOOTER */
-    footer { background: #060F1A; padding: 24px 20px; text-align: center; }
-    footer p { font-size: 0.8rem; color: rgba(255,255,255,0.3); }
-    footer a { color: rgba(255,255,255,0.4); }
-
-    @media (min-width: 640px) {
-      .hero h1 { font-size: 2.6rem; }
-    }
+    footer{background:#040a12;text-align:center;padding:28px 20px;color:#37474f;font-size:12px}
+    footer a{color:#00e676}
   </style>
 </head>
 <body>
 
 <!-- HERO -->
 <section class="hero">
-  <div class="logo">🧠</div>
-  <h1>IA <span>Financeiro</span></h1>
-  <p>Controle seus gastos, descubra oportunidades de renda extra e deixe a <strong>Inteligência Artificial</strong> cuidar do seu dinheiro.</p>
-  <div class="badge-free">🎁 App com 7 dias grátis</div>
+  <div class="hero-badge">🤖 IA · 3 eBooks · 2026</div>
+  <h1>Você recebe o salário<br>e em 2 semanas<br><em>não sabe onde foi?</em></h1>
+  <p class="sub">A maioria das pessoas nunca aprendeu a lidar com dinheiro. A IA vai te ensinar — em 30 dias.</p>
+  <span class="arrow">👇</span>
 </section>
 
-<!-- SOCIAL PROOF -->
-<div class="social-proof">
-  <div class="stars">★★★★★</div>
-  <p>Mais de <strong style="color:#fff">500 pessoas</strong> já controlam suas finanças com IA</p>
+<!-- PROOF BAR -->
+<div class="proof-bar">
+  <div class="proof-item"><strong>3</strong><span>eBooks completos</span></div>
+  <div class="proof-item"><strong>30 dias</strong><span>para resultados reais</span></div>
+  <div class="proof-item"><strong>7 dias</strong><span>garantia total</span></div>
+  <div class="proof-item"><strong>100%</strong><span>acesso imediato</span></div>
 </div>
 
-<!-- BENEFÍCIOS -->
-<div class="section">
-  <div class="section-title">
-    <h2>Tudo que você precisa para <span style="color:#FF9800">mudar de vida</span></h2>
-    <p>App + eBook trabalham juntos para transformar sua relação com o dinheiro</p>
-  </div>
-</div>
-<div class="benefits-grid">
-  <div class="benefit-item">
-    <span class="benefit-icon">🤖</span>
-    <div>
-      <h4>Assistente IA Gemini</h4>
-      <p>Converse com a IA sobre suas finanças e receba respostas personalizadas com seus dados reais</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">💡</span>
-    <div>
-      <h4>Dicas Financeiras Personalizadas</h4>
-      <p>4 dicas geradas pela IA todos os dias, baseadas nos seus gastos e ganhos reais</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">💰</span>
-    <div>
-      <h4>20+ Formas de Renda Extra</h4>
-      <p>iFood, Uber, Shopee, Workana e muito mais — todas as oportunidades em um lugar</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">🛒</span>
-    <div>
-      <h4>Busca Inteligente de Ofertas</h4>
-      <p>A IA analisa se você pode comprar antes de você abrir a carteira</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">📈</span>
-    <div>
-      <h4>Simulador de Investimentos</h4>
-      <p>Veja quanto seu dinheiro pode render em diferentes tipos de aplicação</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">📘</span>
-    <div>
-      <h4>eBook Exclusivo</h4>
-      <p>"Finanças com IA: O Guia Definitivo" — aprenda a usar IA para enriquecer de verdade</p>
-    </div>
-  </div>
-</div>
+<!-- PAIN -->
+<section class="pain">
+  <h2>Isso te soa familiar?</h2>
+  <ul class="pain-list">
+    <li>Salário some antes do mês acabar</li>
+    <li>Dívidas que parecem não ter fim</li>
+    <li>Zero de reserva de emergência</li>
+    <li>"Não sobra dinheiro" para investir</li>
+    <li>Sonha com renda extra mas não sabe por onde começar</li>
+  </ul>
+  <p class="pain-solve">✅ A solução existe — e com IA, é mais simples do que você imagina.</p>
+</section>
 
-<!-- OFERTAS -->
-<div class="section">
-  <div class="section-title">
-    <h2>Escolha o seu <span style="color:#FF9800">plano</span></h2>
-    <p>Comece grátis agora mesmo ou garanta o combo completo</p>
-  </div>
-</div>
+<!-- EBOOKS -->
+<section class="ebooks">
+  <h2 class="sec-title">3 eBooks. Um método <em>completo.</em></h2>
 
-<div class="offers">
-
-  <!-- COMBO -->
-  <div class="offer-card combo">
-    <div class="popular-badge">🔥 MAIS POPULAR</div>
-    <span class="tag hot">MELHOR OFERTA</span>
-    <h3>Combo Completo</h3>
-    <p class="desc">App premium por 1 ano + eBook — o pacote completo para transformar suas finanças</p>
-    <div class="price">
-      <div class="from">De R$ 75,80</div>
-      <span class="amount">R$ 75,80</span>
-      <span class="period"> à vista</span>
-      <div class="trial">✓ App 12 meses + eBook — pagamento único</div>
-    </div>
-    <ul class="benefits">
-      <li>12 meses de app premium desbloqueado</li>
-      <li>eBook "Finanças com IA: O Guia Definitivo"</li>
-      <li>Assistente IA Gemini ilimitado</li>
-      <li>Todas as funcionalidades do app</li>
-      <li>Suporte prioritário</li>
+  <!-- eBook 1 -->
+  <div class="card c1">
+    <span class="hot-tag">🔥 MAIS VENDIDO</span>
+    <div class="card-num">eBook 01 · Ponto de partida</div>
+    <h3>Finanças com IA: O Guia Definitivo para Organizar, Economizar e Criar Renda Extra em 30 Dias</h3>
+    <p class="desc">Para quem quer parar de perder dinheiro e finalmente entender para onde ele vai. Com IA como guia, você chega lá em 30 dias.</p>
+    <ul class="feats">
+      <li>Diagnóstico financeiro completo com IA</li>
+      <li>Orçamento inteligente que você consegue seguir</li>
+      <li>Estratégias para eliminar dívidas com IA</li>
+      <li>Método europeu de finanças pessoais</li>
+      <li>Plano de 30 dias passo a passo</li>
+      <li>🎁 Bônus: guia completo do App IA Financeiro</li>
     </ul>
-    <a href="https://pay.hotmart.com/Q105871662P" target="_blank" class="btn btn-dark">Quero o Combo Completo →</a>
-    <span class="btn-sub">Pagamento seguro via Hotmart · Garantia de 7 dias</span>
+    <div class="urgency">⏰ Oferta por tempo limitado — <strong>61% de desconto ativo agora</strong></div>
+    <div class="price-row">
+      <span class="price">R$ 37,90</span>
+      <span class="old-price">R$ 97,00</span>
+      <span class="disc-badge">61% OFF</span>
+    </div>
+    <a href="https://pay.hotmart.com/Q105871662P" class="btn btn1" target="_blank">📗 QUERO ORGANIZAR MINHAS FINANÇAS — R$ 37,90</a>
+    <p class="btn-note">🔒 Pagamento seguro via Hotmart · PIX, Cartão ou Boleto · Acesso imediato</p>
   </div>
 
-  <!-- APP -->
-  <div class="offer-card app">
-    <span class="tag green">7 DIAS GRÁTIS</span>
-    <h3>📱 Só o App</h3>
-    <p class="desc">Controle total das suas finanças com IA no seu celular</p>
-    <div class="price">
-      <span class="amount">R$ 9,90</span>
-      <span class="period">/mês</span>
-      <div class="trial">✓ Começa grátis, cancele quando quiser</div>
-    </div>
-    <ul class="benefits">
-      <li>Assistente IA Gemini</li>
-      <li>Dicas financeiras personalizadas</li>
-      <li>Renda extra e simulador</li>
-      <li>Controle de gastos ilimitado</li>
+  <!-- eBook 2 -->
+  <div class="card c2">
+    <div class="card-num">eBook 02 · Renda Extra</div>
+    <h3>Renda Extra com IA: 50 Formas Comprovadas de Ganhar Dinheiro com Inteligência Artificial em 2026</h3>
+    <p class="desc">50 formas reais e testadas de gerar renda extra usando IA — muitas sem capital inicial ou precisar aparecer nas redes.</p>
+    <ul class="feats">
+      <li>50 oportunidades classificadas por dificuldade e retorno</li>
+      <li>Serviços freelance que a IA executa por você</li>
+      <li>Como monetizar conteúdo com IA sem aparecer</li>
+      <li>Primeiros R$ 1.000 extras — plano detalhado</li>
+      <li>Ferramentas gratuitas de IA para cada oportunidade</li>
     </ul>
-    <a href="https://play.google.com/store/apps/details?id=com.mycompany.iafinanceiro" target="_blank" class="btn btn-white">Baixar Grátis no Google Play →</a>
-    <span class="btn-sub">Disponível para Android · Grátis por 7 dias</span>
+    <div class="price-row">
+      <span class="price">R$ 47,90</span>
+      <span class="old-price">R$ 127,00</span>
+      <span class="disc-badge">62% OFF</span>
+    </div>
+    <a href="https://go.hotmart.com/N105920073E" class="btn btn2" target="_blank">💰 QUERO CRIAR RENDA EXTRA — R$ 47,90</a>
+    <p class="btn-note">🔒 Pagamento seguro via Hotmart · PIX, Cartão ou Boleto · Acesso imediato</p>
   </div>
 
-  <!-- EBOOK -->
-  <div class="offer-card ebook">
-    <span class="tag purple">PAGAMENTO ÚNICO</span>
-    <h3>📘 Só o eBook</h3>
-    <p class="desc">"Finanças com IA: O Guia Definitivo" — 9 capítulos práticos + plano de 30 dias para transformar sua relação com o dinheiro</p>
-    <div class="price">
-      <span class="amount">R$ 37,90</span>
-      <span class="period"> à vista</span>
-      <div class="trial">✓ Acesso imediato · Download permanente</div>
-    </div>
-    <ul class="benefits">
-      <li>Método 50-30-20 adaptado com IA</li>
-      <li>Como sair das dívidas com estratégia</li>
-      <li>Reserva de emergência e primeiros investimentos</li>
-      <li>20+ formas de renda extra com IA</li>
-      <li>Plano de ação de 30 dias detalhado</li>
-      <li>Bônus: guia completo do App IA Financeiro</li>
+  <!-- eBook 3 -->
+  <div class="card c3">
+    <div class="card-num">eBook 03 · Investimentos</div>
+    <h3>Investimentos com IA: Do Zero ao Primeiro Milhão</h3>
+    <p class="desc">Para quem já tem controle das finanças e quer fazer o dinheiro trabalhar 24h por dia. IA como seu consultor de investimentos pessoal.</p>
+    <ul class="feats">
+      <li>Tesouro Selic, CDB, FIIs e ações explicados pela IA</li>
+      <li>Como a IA analisa riscos e oportunidades por você</li>
+      <li>Carteira inteligente para cada perfil de investidor</li>
+      <li>Do primeiro R$ 100 investido ao primeiro milhão</li>
+      <li>Estratégias dos maiores investidores adaptadas com IA</li>
     </ul>
-    <a href="https://pay.hotmart.com/Q105871662P" target="_blank" class="btn btn-orange">Comprar eBook Agora →</a>
-    <span class="btn-sub">Pagamento seguro via Hotmart · Garantia de 7 dias</span>
+    <div class="price-row">
+      <span class="price">R$ 57,90</span>
+      <span class="old-price">R$ 147,00</span>
+      <span class="disc-badge">61% OFF</span>
+    </div>
+    <a href="https://go.hotmart.com/Q105922714E" class="btn btn3" target="_blank">📈 QUERO INVESTIR COM IA — R$ 57,90</a>
+    <p class="btn-note">🔒 Pagamento seguro via Hotmart · PIX, Cartão ou Boleto · Acesso imediato</p>
   </div>
+</section>
 
-</div>
+<!-- GARANTIA -->
+<section class="guarantee">
+  <div class="gbox">
+    <div class="icon">🛡️</div>
+    <h3>Garantia incondicional de 7 dias</h3>
+    <p>Compre sem risco. Se por qualquer motivo você não ficar satisfeito nos primeiros 7 dias, a Hotmart devolve 100% do seu dinheiro. Sem burocracia, sem perguntas.</p>
+  </div>
+</section>
 
-<!-- EBOOK CHAPTERS -->
-<div class="section">
-  <div class="section-title">
-    <h2>O que você vai aprender no <span style="color:#FF9800">eBook</span></h2>
-    <p>9 capítulos práticos + bônus · Método Europeu de Finanças · Edição 2026</p>
+<!-- APP BONUS -->
+<section class="bonus">
+  <h2>🎁 Bônus: App IA Financeiro</h2>
+  <p>Quem compra qualquer eBook recebe o guia completo do App IA Financeiro — com dashboard em tempo real, assistente IA Gemini e dicas personalizadas baseadas nos seus dados.</p>
+  <div class="app-chips">
+    <span class="chip">📊 Dashboard de ganhos e gastos</span>
+    <span class="chip">🤖 Assistente IA Gemini</span>
+    <span class="chip">💡 Dicas personalizadas</span>
+    <span class="chip">📈 Recomendações de investimento</span>
+    <span class="chip">💰 20+ formas de renda extra</span>
   </div>
-</div>
-<div class="benefits-grid" style="padding-top:0">
-  <div class="benefit-item">
-    <span class="benefit-icon">🤖</span>
-    <div>
-      <h4>Cap. 1 — O Poder da IA nas Suas Finanças</h4>
-      <p>Por que a IA vai mudar para sempre a forma como você lida com dinheiro. As 4 áreas onde a IA transforma suas finanças.</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">🔍</span>
-    <div>
-      <h4>Cap. 2 — Diagnóstico Financeiro</h4>
-      <p>Descubra em qual dos 4 perfis você está (Vermelho, Amarelo, Azul ou Verde) e calcule seu Índice de Saúde Financeira.</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">📊</span>
-    <div>
-      <h4>Cap. 3 — Orçamento Inteligente com IA</h4>
-      <p>O Método 50-30-20 adaptado por IA. As 8 categorias que a IA monitora e como criar um orçamento que você realmente vai seguir.</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">⚔️</span>
-    <div>
-      <h4>Cap. 4 — A Guerra Contra as Dívidas</h4>
-      <p>Estratégias práticas para eliminar dívidas com método e sem sofrimento. Como negociar e quitar com inteligência.</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">🛡️</span>
-    <div>
-      <h4>Cap. 5 — Sua Reserva de Emergência</h4>
-      <p>Como construir sua proteção financeira mesmo ganhando pouco. Meta: 6x sua renda mensal.</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">📈</span>
-    <div>
-      <h4>Cap. 6 — Investimentos para Iniciantes</h4>
-      <p>CDB, Tesouro Direto, ações e muito mais. A IA te mostra onde colocar seu dinheiro de acordo com seu perfil.</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">💰</span>
-    <div>
-      <h4>Cap. 7 — Renda Extra com IA</h4>
-      <p>Mais de 20 formas de ganhar dinheiro extra com ajuda da IA — para qualquer perfil e disponibilidade.</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">🌍</span>
-    <div>
-      <h4>Cap. 8 — O Método Europeu de Finanças</h4>
-      <p>Os hábitos que fazem europeus acumularem riqueza enquanto brasileiros ficam no sufoco — adaptados à nossa realidade.</p>
-    </div>
-  </div>
-  <div class="benefit-item">
-    <span class="benefit-icon">📅</span>
-    <div>
-      <h4>Cap. 9 — Seu Plano de 30 Dias</h4>
-      <p>Um plano diário detalhado. Siga à risca e em 30 dias sua vida financeira será completamente diferente.</p>
-    </div>
-  </div>
-  <div class="benefit-item" style="border-color:rgba(255,152,0,0.3);background:rgba(255,152,0,0.06)">
-    <span class="benefit-icon">🎁</span>
-    <div>
-      <h4>Bônus — Guia Completo do App IA Financeiro</h4>
-      <p>Como usar o app no dia a dia para aplicar tudo que aprendeu no eBook. App e eBook trabalham juntos.</p>
-    </div>
-  </div>
-</div>
+</section>
 
 <!-- FAQ -->
-<div class="section">
-  <div class="section-title">
-    <h2>Perguntas <span style="color:#FF9800">frequentes</span></h2>
-  </div>
-</div>
-<div class="faq">
-  <div class="faq-item">
-    <h4>O app é gratuito?</h4>
-    <p>Sim! Você tem 7 dias grátis sem precisar de cartão. Depois, R$ 9,90/mês cobrado automaticamente pelo Google Play. Cancele quando quiser.</p>
-  </div>
-  <div class="faq-item">
-    <h4>O eBook é digital?</h4>
-    <p>Sim, entregue imediatamente após o pagamento. Você acessa pelo computador, celular ou tablet.</p>
-  </div>
-  <div class="faq-item">
-    <h4>Tenho garantia?</h4>
-    <p>Sim. 7 dias de garantia total. Se não gostar, devolvemos 100% do seu dinheiro sem perguntas.</p>
-  </div>
-  <div class="faq-item">
-    <h4>O Combo Completo como funciona?</h4>
-    <p>Você compra pelo Hotmart e recebe as instruções por e-mail para ativar seu acesso anual no app com o mesmo e-mail usado no pagamento.</p>
-  </div>
-  <div class="faq-item">
-    <h4>Funciona em iPhone?</h4>
-    <p>Por enquanto o app é exclusivo para Android. O eBook funciona em qualquer dispositivo.</p>
+<div class="faq-wrap">
+  <div class="faq">
+    <h2 class="sec-title" style="margin-bottom:28px">Dúvidas <em>frequentes</em></h2>
+    <div class="faq-item">
+      <h4>Como recebo o eBook após a compra?</h4>
+      <p>Imediatamente após o pagamento ser aprovado, você recebe um e-mail com o link de acesso. O processo é 100% automático via Hotmart.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Posso parcelar no cartão?</h4>
+      <p>Sim. A Hotmart aceita cartão de crédito em até 12x, PIX (com desconto instantâneo) e boleto bancário.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Funciona para quem está começando do zero?</h4>
+      <p>Especialmente! O eBook 1 (Finanças com IA, R$ 37,90) foi pensado para quem nunca organizou as finanças. Linguagem simples, passo a passo.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Preciso entender de IA para aproveitar os eBooks?</h4>
+      <p>Não. Os eBooks ensinam tudo do zero, incluindo quais ferramentas de IA usar e como — gratuitamente.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Qual eBook devo comprar primeiro?</h4>
+      <p>Recomendamos o eBook 1 (R$ 37,90). É o mais barato e o ponto de partida ideal. Depois você avança para os outros no seu tempo.</p>
+    </div>
+    <div class="faq-item">
+      <h4>Posso comprar os 3?</h4>
+      <p>Sim! Cada eBook foca numa fase: organizar → criar renda → investir. Juntos formam um método financeiro completo com IA.</p>
+    </div>
   </div>
 </div>
 
 <!-- CTA FINAL -->
-<div class="cta-final">
-  <h2>Comece a mudar sua vida <span style="color:#FF9800">hoje</span></h2>
-  <p>7 dias grátis no app. Garantia de 7 dias no eBook. Risco zero.</p>
-  <a href="https://play.google.com/store/apps/details?id=com.mycompany.iafinanceiro" target="_blank" class="btn btn-orange" style="max-width:320px;margin:0 auto 12px;">Baixar App Grátis →</a>
-  <a href="https://pay.hotmart.com/Q105871662P" target="_blank" class="btn btn-dark" style="max-width:320px;margin:0 auto;">Comprar eBook →</a>
-</div>
+<section class="cta-final">
+  <h2>Pronto para mudar sua<br><em>vida financeira?</em></h2>
+  <p>Escolha seu eBook e comece hoje. Acesso imediato. Garantia de 7 dias. Risco zero.</p>
+  <div class="cta-stack">
+    <a href="https://pay.hotmart.com/Q105871662P" class="btn btn1" target="_blank">📗 Finanças com IA — R$ 37,90</a>
+    <a href="https://go.hotmart.com/N105920073E" class="btn btn2" target="_blank">💰 Renda Extra com IA — R$ 47,90</a>
+    <a href="https://go.hotmart.com/Q105922714E" class="btn btn3" target="_blank">📈 Investimentos com IA — R$ 57,90</a>
+  </div>
+</section>
 
-<!-- WHATSAPP -->
-<a href="https://wa.me/55" target="_blank" class="whatsapp-btn" title="Falar no WhatsApp">💬</a>
-
-<!-- FOOTER -->
 <footer>
-  <p>© 2026 IA Financeiro · <a href="privacy-policy.html">Política de Privacidade</a></p>
-  <p style="margin-top:6px">Desenvolvido com ❤️ no Brasil</p>
+  <p>© 2026 IA Financeiro · Todos os direitos reservados</p>
+  <p style="margin-top:6px">Pagamentos processados com segurança pela <a href="https://hotmart.com" target="_blank">Hotmart</a></p>
 </footer>
 
 </body>
