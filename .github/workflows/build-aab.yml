@@ -24,19 +24,36 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Decode keystore
+      - name: Setup keystore
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/ia-financeiro-upload.jks
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "Usando keystore salvo dos Secrets"
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/ia-financeiro-upload.jks
+            echo "KEYSTORE_PASSWORD=${{ secrets.KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
+          else
+            echo "Gerando novo keystore (primeira vez)"
+            PASS="IaFinanceiro2026Alcides!"
+            keytool -genkey -v \
+              -keystore android/app/ia-financeiro-upload.jks \
+              -alias ia-financeiro \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Alcides Ferreira Costa, OU=Mobile, O=IA Financeiro, L=Andorra, ST=Andorra, C=AD" \
+              -storepass "$PASS" \
+              -keypass "$PASS"
+            echo "KEYSTORE_PASSWORD=$PASS" >> $GITHUB_ENV
+            echo "=== SALVE ISTO COMO SECRET 'KEYSTORE_BASE64' ==="
+            base64 -w 0 android/app/ia-financeiro-upload.jks
+            echo ""
+            echo "=== SALVE '$PASS' COMO SECRET 'KEYSTORE_PASSWORD' ==="
+          fi
 
       - name: Build signed AAB
         env:
-          KEY_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_STORE_PASSWORD: ${{ env.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ env.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ia-financeiro
           KEY_PATH: ia-financeiro-upload.jks
-        run: |
-          flutter build appbundle --release \
-            --dart-define=KEYSTORE_PASSWORD=$KEY_STORE_PASSWORD
+        run: flutter build appbundle --release
 
       - name: Upload AAB
         uses: actions/upload-artifact@v4
@@ -44,3 +61,11 @@ jobs:
           name: ia-financeiro-aab
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
+
+      - name: Upload keystore (somente primeira vez)
+        if: ${{ secrets.KEYSTORE_BASE64 == '' || secrets.KEYSTORE_BASE64 == null }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: keystore-backup
+          path: android/app/ia-financeiro-upload.jks
+          retention-days: 7
