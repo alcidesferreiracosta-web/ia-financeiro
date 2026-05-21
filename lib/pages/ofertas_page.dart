@@ -54,12 +54,15 @@ class _OfertasPageState extends State<OfertasPage> {
   Future<void> _buscar() async {
     final q = _searchCtrl.text.trim();
     if (q.isEmpty) return;
-    final url = Uri.parse(
-      'https://www.mercadolivre.com.br/search?q=${Uri.encodeComponent(q)}',
-    );
+    final url = 'https://www.google.com/search?q=${Uri.encodeComponent(q)}&tbm=shop';
     try {
-      await launchUrl(url, mode: LaunchMode.inAppWebView);
+      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     } catch (_) {}
+  }
+
+  void _limparBusca() {
+    _searchCtrl.clear();
+    setState(() {});
   }
 
   void _abrirLink(String url) async {
@@ -107,7 +110,7 @@ class _OfertasPageState extends State<OfertasPage> {
                       textInputAction: TextInputAction.search,
                       onSubmitted: (_) => _buscar(),
                       decoration: InputDecoration(
-                        hintText: 'Buscar qualquer produto no Mercado Livre...',
+                        hintText: 'Buscar no Google Shopping...',
                         hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
                         prefixIcon: const Icon(Icons.search, color: Colors.white38, size: 20),
                         suffixIcon: null,
@@ -120,11 +123,14 @@ class _OfertasPageState extends State<OfertasPage> {
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
-                    onTap: _buscar,
+                    onTap: _searchCtrl.text.isNotEmpty ? _limparBusca : _buscar,
                     child: Container(
                       padding: const EdgeInsets.all(11),
                       decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(12)),
-                      child: const Icon(Icons.search, color: Colors.white, size: 20),
+                      child: Icon(
+                        _searchCtrl.text.isNotEmpty ? Icons.close : Icons.search,
+                        color: Colors.white, size: 20,
+                      ),
                     ),
                   ),
                 ]),
@@ -144,132 +150,6 @@ class _OfertasPageState extends State<OfertasPage> {
           },
         ),
       ),
-    );
-  }
-}
-
-// ─── Resultados da busca ML ───────────────────────────────────────────────────
-class _ResultadosBusca extends StatelessWidget {
-  final List<Map<String, dynamic>> produtos;
-  final bool buscando;
-  final double saldo, ganhos;
-  final void Function(String) onAbrir;
-  const _ResultadosBusca({required this.produtos, required this.buscando, required this.saldo, required this.ganhos, required this.onAbrir});
-
-  String _fmt(double v) => 'R\$ ${v.toStringAsFixed(2).replaceAll('.', ',')}';
-
-  @override
-  Widget build(BuildContext context) {
-    if (buscando) return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      CircularProgressIndicator(color: Colors.orange),
-      SizedBox(height: 12),
-      Text('Buscando no Mercado Livre...', style: TextStyle(color: Colors.white54)),
-    ]));
-
-    if (produtos.isEmpty) return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.search_off, color: Colors.white24, size: 48),
-      SizedBox(height: 12),
-      Text('Nenhum produto encontrado', style: TextStyle(color: Colors.white54)),
-    ]));
-
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      itemCount: produtos.length + 1,
-      itemBuilder: (_, i) {
-        if (i == 0) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(children: [
-              const Icon(Icons.verified, color: Colors.orange, size: 14),
-              const SizedBox(width: 6),
-              Text('${produtos.length} produtos — link com seu código de afiliado',
-                  style: const TextStyle(color: Colors.white38, fontSize: 11)),
-            ]),
-          );
-        }
-        final p = produtos[i - 1];
-        final preco = (p['preco'] as num?)?.toDouble() ?? 0;
-        final precoOrig = (p['preco_original'] as num?)?.toDouble() ?? 0;
-        final verd = _iaVeredicto(preco, saldo, ganhos);
-        final link = p['link'] as String? ?? '';
-        final desc = precoOrig > preco ? ((precoOrig - preco) / precoOrig * 100).toInt() : 0;
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          decoration: BoxDecoration(color: const Color(0xFF1A2A3A), borderRadius: BorderRadius.circular(14)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // Imagem
-            if ((p['imagem_url'] as String? ?? '').isNotEmpty)
-              ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                child: Image.network(p['imagem_url']!, width: double.infinity, height: 130, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox()),
-              ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                // Badges
-                Row(children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(6)),
-                    child: const Text('🛒 Mercado Livre', style: TextStyle(color: Colors.orange, fontSize: 10)),
-                  ),
-                  if ((p['frete_gratis'] as bool? ?? false)) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.green.withOpacity(0.15), borderRadius: BorderRadius.circular(6)),
-                      child: const Text('🚚 Frete grátis', style: TextStyle(color: Colors.greenAccent, fontSize: 10)),
-                    ),
-                  ],
-                  if (desc > 0) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(6)),
-                      child: Text('-$desc%', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ]),
-                const SizedBox(height: 8),
-                // Título
-                Text(p['titulo'] as String? ?? '', style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 6),
-                // Preço
-                Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text(_fmt(preco), style: const TextStyle(color: Colors.orange, fontSize: 18, fontWeight: FontWeight.bold)),
-                  if (precoOrig > preco) ...[
-                    const SizedBox(width: 8),
-                    Text(_fmt(precoOrig), style: const TextStyle(color: Colors.white38, fontSize: 12, decoration: TextDecoration.lineThrough, decorationColor: Colors.white38)),
-                  ],
-                ]),
-                const SizedBox(height: 8),
-                // Veredicto IA
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(color: verd.cor.withOpacity(0.08), borderRadius: BorderRadius.circular(8), border: Border.all(color: verd.cor.withOpacity(0.25))),
-                  child: Row(children: [
-                    Text(verd.emoji, style: const TextStyle(fontSize: 13)),
-                    const SizedBox(width: 6),
-                    Expanded(child: Text(verd.texto, style: TextStyle(color: verd.cor, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  ]),
-                ),
-                const SizedBox(height: 10),
-                // Botão
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => onAbrir(link),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 10), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                    child: const Text('Ver no Mercado Livre', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  ),
-                ),
-              ]),
-            ),
-          ]),
-        );
-      },
     );
   }
 }
@@ -329,7 +209,7 @@ class _OfertasFirestore extends StatelessWidget {
                   SizedBox(height: 10),
                   Text('Use a busca acima para encontrar produtos', style: TextStyle(color: Colors.white54)),
                   SizedBox(height: 4),
-                  Text('Qualquer produto que o usuário comprar pela busca\ngera comissão automaticamente para você.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white38, fontSize: 12)),
+                  Text('A busca abre o Google Shopping\ncom os melhores preços disponíveis.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white38, fontSize: 12)),
                 ]),
               ),
             ],
