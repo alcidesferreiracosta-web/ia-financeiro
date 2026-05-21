@@ -5,182 +5,401 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>IA Financeiro — 3 eBooks que Transformam Suas Finanças com Inteligência Artificial</title>
   <meta name="description" content="3 eBooks com IA para organizar, criar renda extra e investir. Método de 30 dias. Acesso imediato. Garantia de 7 dias.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Segoe UI',Arial,sans-serif;background:#080f1a;color:#fff;line-height:1.6}
+    body{font-family:'Inter',sans-serif;background:#060d18;color:#fff;line-height:1.6;overflow-x:hidden}
     a{text-decoration:none}
 
-    /* HERO */
-    .hero{background:linear-gradient(160deg,#080f1a 0%,#0d1f3c 50%,#0a1a10 100%);padding:56px 20px 48px;text-align:center}
-    .hero-badge{display:inline-block;background:rgba(0,230,118,0.12);border:1px solid #00e676;color:#00e676;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:6px 16px;border-radius:20px;margin-bottom:20px}
-    .hero h1{font-size:clamp(26px,7vw,50px);font-weight:900;line-height:1.15;margin-bottom:16px}
-    .hero h1 em{color:#00e676;font-style:normal}
-    .hero .sub{font-size:clamp(15px,3vw,19px);color:#90a4ae;max-width:520px;margin:0 auto 28px}
-    .arrow{font-size:26px;display:block;animation:bounce 1.4s infinite}
-    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
+    /* ===== HERO ===== */
+    .hero{
+      position:relative;
+      min-height:100vh;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;padding:80px 20px 60px;
+      overflow:hidden;
+    }
+    .hero-bg{
+      position:absolute;inset:0;
+      background-image:url('https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&w=1920&q=80');
+      background-size:cover;background-position:center;
+      filter:brightness(0.25);
+      z-index:0;
+    }
+    .hero-overlay{
+      position:absolute;inset:0;
+      background:linear-gradient(160deg,rgba(0,40,15,0.7) 0%,rgba(6,13,24,0.85) 60%,rgba(0,20,40,0.9) 100%);
+      z-index:1;
+    }
+    .hero>*{position:relative;z-index:2}
 
-    /* PROOF BAR */
-    .proof-bar{background:#0b1524;padding:14px 20px;display:flex;justify-content:center;gap:28px;flex-wrap:wrap;border-top:1px solid #1a2a40;border-bottom:1px solid #1a2a40}
+    .hero-badge{
+      display:inline-block;
+      background:rgba(0,230,118,0.15);
+      border:1px solid #00e676;color:#00e676;
+      font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+      padding:8px 20px;border-radius:30px;margin-bottom:28px;
+    }
+    .hero h1{
+      font-size:clamp(34px,8vw,72px);
+      font-weight:900;line-height:1.1;margin-bottom:20px;
+      text-shadow:0 4px 30px rgba(0,0,0,0.5);
+    }
+    .hero h1 em{color:#00e676;font-style:normal;display:block}
+    .hero .sub{
+      font-size:clamp(17px,3.5vw,22px);
+      color:#b0bec5;max-width:600px;margin:0 auto 36px;
+      text-shadow:0 2px 10px rgba(0,0,0,0.5);
+    }
+    .hero-cta{
+      display:inline-block;
+      background:linear-gradient(135deg,#00e676,#00b0ff);
+      color:#060d18;font-size:18px;font-weight:900;
+      padding:18px 36px;border-radius:14px;margin-bottom:16px;
+      box-shadow:0 8px 32px rgba(0,230,118,0.4);
+      transition:all .2s;
+    }
+    .hero-cta:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,230,118,0.5)}
+    .hero-note{font-size:12px;color:#546e7a}
+    .scroll-hint{margin-top:40px;font-size:28px;animation:bounce 1.5s infinite}
+    @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(9px)}}
+
+    /* ===== PROOF BAR ===== */
+    .proof-bar{
+      background:#080f1c;
+      padding:18px 20px;
+      display:flex;justify-content:center;gap:40px;flex-wrap:wrap;
+      border-bottom:1px solid #0f2030;
+    }
     .proof-item{text-align:center}
-    .proof-item strong{display:block;font-size:20px;font-weight:900;color:#00e676}
-    .proof-item span{font-size:11px;color:#546e7a}
+    .proof-item strong{display:block;font-size:26px;font-weight:900;color:#00e676}
+    .proof-item span{font-size:12px;color:#546e7a;letter-spacing:.5px}
 
-    /* PAIN */
-    .pain{background:#0b1524;padding:52px 20px;text-align:center}
-    .pain h2{font-size:clamp(18px,4vw,30px);font-weight:800;margin-bottom:24px}
-    .pain-list{list-style:none;max-width:460px;margin:0 auto;text-align:left}
-    .pain-list li{padding:11px 0;font-size:15px;color:#78909c;border-bottom:1px solid #111e2e}
-    .pain-list li::before{content:"❌  "}
-    .pain-solve{margin-top:28px;font-size:18px;font-weight:800;color:#00e676}
+    /* ===== PAIN ===== */
+    .pain{
+      position:relative;padding:80px 20px;text-align:center;overflow:hidden;
+    }
+    .pain-bg{
+      position:absolute;inset:0;
+      background-image:url('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1920&q=80');
+      background-size:cover;background-position:center;
+      filter:brightness(0.15);z-index:0;
+    }
+    .pain>*{position:relative;z-index:1}
+    .pain h2{font-size:clamp(24px,5vw,44px);font-weight:900;margin-bottom:32px;line-height:1.2}
+    .pain-list{list-style:none;max-width:520px;margin:0 auto 32px;text-align:left}
+    .pain-list li{
+      padding:14px 18px;font-size:17px;color:#cfd8dc;
+      border-bottom:1px solid rgba(255,255,255,0.07);
+      display:flex;align-items:center;gap:12px;
+    }
+    .pain-list li span{font-size:20px;flex-shrink:0}
+    .pain-solve{
+      display:inline-block;
+      background:rgba(0,230,118,0.12);border:1px solid #00e676;
+      color:#00e676;font-size:20px;font-weight:800;
+      padding:14px 28px;border-radius:12px;
+    }
 
-    /* EBOOKS SECTION */
-    .ebooks{padding:56px 20px;max-width:860px;margin:0 auto}
-    .sec-title{text-align:center;font-size:clamp(20px,5vw,34px);font-weight:900;margin-bottom:44px}
+    /* ===== EBOOKS ===== */
+    .ebooks{padding:80px 20px;max-width:900px;margin:0 auto}
+    .sec-title{text-align:center;font-size:clamp(26px,5vw,48px);font-weight:900;margin-bottom:16px;line-height:1.2}
     .sec-title em{color:#00e676;font-style:normal}
+    .sec-sub{text-align:center;color:#78909c;font-size:17px;margin-bottom:52px}
 
     /* CARD */
-    .card{background:linear-gradient(140deg,#0d1f3c,#080f1a);border:1px solid #1a2a40;border-radius:22px;padding:34px 26px;margin-bottom:28px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s,border-color .2s}
-    .card:hover{transform:translateY(-5px);box-shadow:0 24px 64px rgba(0,0,0,.5)}
-    .card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;border-radius:22px 22px 0 0}
-    .c1::before{background:linear-gradient(90deg,#00e676,#00b0ff)}
-    .c1:hover{border-color:#00e676}
-    .c2::before{background:linear-gradient(90deg,#ffa726,#ff7043)}
-    .c2:hover{border-color:#ffa726}
-    .c3::before{background:linear-gradient(90deg,#ab47bc,#ec407a)}
-    .c3:hover{border-color:#ab47bc}
+    .card{
+      border-radius:24px;padding:40px 32px;margin-bottom:32px;
+      position:relative;overflow:hidden;
+      transition:transform .25s,box-shadow .25s;
+    }
+    .card:hover{transform:translateY(-6px);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+    .card-bg-img{
+      position:absolute;inset:0;
+      background-size:cover;background-position:center;
+      filter:brightness(0.12);z-index:0;
+    }
+    .card-overlay{position:absolute;inset:0;z-index:1}
+    .card>*:not(.card-bg-img):not(.card-overlay){position:relative;z-index:2}
+    .card::after{content:'';position:absolute;top:0;left:0;right:0;height:5px;z-index:3}
 
-    .hot-tag{position:absolute;top:18px;right:18px;background:#ff1744;color:#fff;font-size:10px;font-weight:800;padding:4px 10px;border-radius:20px;letter-spacing:1px}
-    .card-num{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px}
+    .c1{background:#060f1a;border:1px solid rgba(0,230,118,0.3)}
+    .c1 .card-bg-img{background-image:url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80')}
+    .c1 .card-overlay{background:linear-gradient(140deg,rgba(0,15,8,0.92),rgba(6,13,24,0.95))}
+    .c1::after{background:linear-gradient(90deg,#00e676,#00b0ff)}
+    .c1:hover{border-color:#00e676;box-shadow:0 30px 80px rgba(0,230,118,0.15)}
+
+    .c2{background:#0f0a00;border:1px solid rgba(255,167,38,0.3)}
+    .c2 .card-bg-img{background-image:url('https://images.unsplash.com/photo-1591696205602-2f950c417cb9?auto=format&fit=crop&w=1200&q=80')}
+    .c2 .card-overlay{background:linear-gradient(140deg,rgba(15,8,0,0.92),rgba(6,13,24,0.95))}
+    .c2::after{background:linear-gradient(90deg,#ffa726,#ff7043)}
+    .c2:hover{border-color:#ffa726;box-shadow:0 30px 80px rgba(255,167,38,0.15)}
+
+    .c3{background:#0a0514;border:1px solid rgba(171,71,188,0.3)}
+    .c3 .card-bg-img{background-image:url('https://images.unsplash.com/photo-1642543492481-44e81e3914a7?auto=format&fit=crop&w=1200&q=80')}
+    .c3 .card-overlay{background:linear-gradient(140deg,rgba(10,5,20,0.92),rgba(6,13,24,0.95))}
+    .c3::after{background:linear-gradient(90deg,#ab47bc,#ec407a)}
+    .c3:hover{border-color:#ab47bc;box-shadow:0 30px 80px rgba(171,71,188,0.15)}
+
+    .hot-tag{
+      display:inline-block;background:#ff1744;color:#fff;
+      font-size:11px;font-weight:900;padding:5px 12px;border-radius:20px;
+      letter-spacing:1px;margin-bottom:12px;
+    }
+    .card-num{font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px}
     .c1 .card-num{color:#00e676}.c2 .card-num{color:#ffa726}.c3 .card-num{color:#ab47bc}
-    .card h3{font-size:clamp(17px,3vw,22px);font-weight:900;margin-bottom:10px}
-    .card>.desc{color:#78909c;font-size:14px;margin-bottom:18px}
-    .feats{list-style:none;margin-bottom:26px}
-    .feats li{padding:7px 0;font-size:14px;color:#b0bec5;border-bottom:1px solid #0f1e30}
-    .feats li::before{content:"✅  "}
 
-    /* URGENCY */
-    .urgency{background:rgba(255,23,68,0.08);border:1px solid rgba(255,23,68,0.3);border-radius:10px;padding:12px 16px;text-align:center;font-size:13px;color:#ff8a80;margin-bottom:18px}
-    .urgency strong{color:#ff1744}
+    .card h3{font-size:clamp(20px,3.5vw,28px);font-weight:900;margin-bottom:12px;line-height:1.25}
+    .card>.desc{color:#90a4ae;font-size:16px;margin-bottom:22px;line-height:1.6}
 
-    /* PRICE */
-    .price-row{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-    .price{font-size:34px;font-weight:900}
+    .feats{list-style:none;margin-bottom:28px}
+    .feats li{
+      padding:10px 0;font-size:16px;color:#cfd8dc;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      display:flex;align-items:center;gap:10px;
+    }
+    .feats li::before{content:"✅";flex-shrink:0}
+
+    .urgency{
+      background:rgba(255,23,68,0.1);border:1px solid rgba(255,23,68,0.3);
+      border-radius:10px;padding:14px 18px;
+      text-align:center;font-size:15px;color:#ff8a80;margin-bottom:20px;
+    }
+    .urgency strong{color:#ff4081}
+
+    .price-row{display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap}
+    .price{font-size:clamp(38px,7vw,52px);font-weight:900;line-height:1}
     .c1 .price{color:#00e676}.c2 .price{color:#ffa726}.c3 .price{color:#ab47bc}
-    .old-price{font-size:14px;color:#37474f;text-decoration:line-through}
-    .disc-badge{font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px}
+    .old-price{font-size:16px;color:#37474f;text-decoration:line-through}
+    .disc-badge{font-size:13px;font-weight:800;padding:4px 12px;border-radius:20px}
     .c1 .disc-badge{background:rgba(0,230,118,.12);color:#00e676;border:1px solid #00e676}
     .c2 .disc-badge{background:rgba(255,167,38,.12);color:#ffa726;border:1px solid #ffa726}
     .c3 .disc-badge{background:rgba(171,71,188,.12);color:#ab47bc;border:1px solid #ab47bc}
 
-    /* BUTTONS */
-    .btn{display:block;text-align:center;padding:17px 22px;border-radius:13px;font-size:16px;font-weight:900;letter-spacing:.3px;transition:all .18s}
+    .btn{
+      display:block;text-align:center;
+      padding:20px 24px;border-radius:14px;
+      font-size:clamp(15px,3vw,18px);font-weight:900;letter-spacing:.3px;
+      transition:all .2s;border:none;cursor:pointer;
+    }
     .btn:hover{opacity:.9;transform:scale(1.02)}
-    .btn1{background:linear-gradient(135deg,#00e676,#00b0ff);color:#060f18}
-    .btn2{background:linear-gradient(135deg,#ffa726,#ff7043);color:#060f18}
-    .btn3{background:linear-gradient(135deg,#ab47bc,#ec407a);color:#fff}
-    .btn-note{text-align:center;font-size:11px;color:#37474f;margin-top:9px}
+    .btn1{background:linear-gradient(135deg,#00e676,#00b0ff);color:#050d12;box-shadow:0 6px 24px rgba(0,230,118,0.35)}
+    .btn2{background:linear-gradient(135deg,#ffa726,#ff7043);color:#050d12;box-shadow:0 6px 24px rgba(255,167,38,0.35)}
+    .btn3{background:linear-gradient(135deg,#ab47bc,#ec407a);color:#fff;box-shadow:0 6px 24px rgba(171,71,188,0.35)}
+    .btn-note{text-align:center;font-size:12px;color:#37474f;margin-top:10px}
 
-    /* GUARANTEE */
-    .guarantee{background:#0b1524;padding:52px 20px;text-align:center}
-    .gbox{max-width:480px;margin:0 auto;background:linear-gradient(140deg,#0d1f3c,#080f1a);border:1px solid #1a2a40;border-radius:22px;padding:36px 28px}
-    .gbox .icon{font-size:52px;margin-bottom:14px}
-    .gbox h3{font-size:22px;font-weight:900;margin-bottom:10px}
-    .gbox p{color:#78909c;font-size:14px}
+    /* ===== PROSPERITY SECTION ===== */
+    .prosperity{
+      position:relative;padding:100px 20px;text-align:center;overflow:hidden;
+    }
+    .prosperity-bg{
+      position:absolute;inset:0;
+      background-image:url('https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1920&q=80');
+      background-size:cover;background-position:center top;
+      filter:brightness(0.2);z-index:0;
+    }
+    .prosperity-overlay{
+      position:absolute;inset:0;
+      background:linear-gradient(to bottom,rgba(6,13,24,0.7),rgba(6,13,24,0.5),rgba(6,13,24,0.9));
+      z-index:1;
+    }
+    .prosperity>*:not(.prosperity-bg):not(.prosperity-overlay){position:relative;z-index:2}
+    .prosperity h2{font-size:clamp(24px,5vw,44px);font-weight:900;margin-bottom:16px;line-height:1.2}
+    .prosperity p{font-size:18px;color:#b0bec5;max-width:560px;margin:0 auto 36px}
+    .prosperity-stats{
+      display:flex;justify-content:center;gap:48px;flex-wrap:wrap;margin-bottom:40px;
+    }
+    .pstat{text-align:center}
+    .pstat strong{display:block;font-size:clamp(36px,7vw,60px);font-weight:900;color:#00e676;line-height:1}
+    .pstat span{font-size:14px;color:#90a4ae}
 
-    /* APP BONUS */
-    .bonus{padding:52px 20px;text-align:center;max-width:660px;margin:0 auto}
-    .bonus h2{font-size:clamp(20px,4vw,30px);font-weight:900;margin-bottom:14px}
-    .bonus p{color:#78909c;font-size:15px;margin-bottom:22px}
-    .app-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
-    .chip{background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.25);color:#00e676;padding:7px 15px;border-radius:20px;font-size:13px;font-weight:600}
+    /* ===== GUARANTEE ===== */
+    .guarantee{
+      position:relative;padding:80px 20px;text-align:center;overflow:hidden;
+    }
+    .guarantee-bg{
+      position:absolute;inset:0;
+      background-image:url('https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=1920&q=80');
+      background-size:cover;background-position:center;
+      filter:brightness(0.12);z-index:0;
+    }
+    .guarantee>*:not(.guarantee-bg){position:relative;z-index:1}
+    .gbox{
+      max-width:520px;margin:0 auto;
+      background:rgba(6,13,24,0.85);backdrop-filter:blur(10px);
+      border:1px solid rgba(0,230,118,0.2);border-radius:24px;padding:44px 32px;
+    }
+    .gbox .icon{font-size:64px;margin-bottom:16px;display:block}
+    .gbox h3{font-size:clamp(22px,4vw,32px);font-weight:900;margin-bottom:12px}
+    .gbox p{color:#90a4ae;font-size:16px;line-height:1.7}
 
-    /* FAQ */
-    .faq-wrap{background:#0b1524;padding:52px 20px}
-    .faq{max-width:660px;margin:0 auto}
-    .faq-item{border-bottom:1px solid #1a2a40;padding:18px 0}
-    .faq-item h4{font-size:15px;font-weight:700;color:#e0e0e0;margin-bottom:7px}
-    .faq-item p{color:#78909c;font-size:13px}
+    /* ===== APP BONUS ===== */
+    .bonus{
+      position:relative;padding:80px 20px;text-align:center;overflow:hidden;
+    }
+    .bonus-bg{
+      position:absolute;inset:0;
+      background-image:url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1920&q=80');
+      background-size:cover;background-position:center;
+      filter:brightness(0.15);z-index:0;
+    }
+    .bonus>*:not(.bonus-bg){position:relative;z-index:1}
+    .bonus h2{font-size:clamp(24px,5vw,42px);font-weight:900;margin-bottom:16px}
+    .bonus p{color:#b0bec5;font-size:17px;max-width:600px;margin:0 auto 28px}
+    .app-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+    .chip{
+      background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.3);
+      color:#00e676;padding:10px 18px;border-radius:30px;
+      font-size:14px;font-weight:700;
+    }
 
-    /* CTA FINAL */
-    .cta-final{background:linear-gradient(140deg,#0d1f3c,#0a1a10);padding:56px 20px;text-align:center}
-    .cta-final h2{font-size:clamp(22px,5vw,38px);font-weight:900;margin-bottom:14px}
+    /* ===== FAQ ===== */
+    .faq-wrap{background:#080f1c;padding:80px 20px}
+    .faq{max-width:700px;margin:0 auto}
+    .faq-item{
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.07);
+      border-radius:14px;padding:22px 24px;margin-bottom:12px;
+    }
+    .faq-item h4{font-size:17px;font-weight:700;color:#e0e0e0;margin-bottom:8px}
+    .faq-item p{color:#78909c;font-size:15px;line-height:1.7}
+
+    /* ===== CTA FINAL ===== */
+    .cta-final{
+      position:relative;padding:100px 20px;text-align:center;overflow:hidden;
+    }
+    .cta-final-bg{
+      position:absolute;inset:0;
+      background-image:url('https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1920&q=80');
+      background-size:cover;background-position:center top;
+      filter:brightness(0.15);z-index:0;
+    }
+    .cta-final-overlay{
+      position:absolute;inset:0;
+      background:linear-gradient(to bottom,rgba(0,20,10,0.8),rgba(6,13,24,0.9));
+      z-index:1;
+    }
+    .cta-final>*:not(.cta-final-bg):not(.cta-final-overlay){position:relative;z-index:2}
+    .cta-final h2{font-size:clamp(28px,6vw,52px);font-weight:900;margin-bottom:16px;line-height:1.2}
     .cta-final h2 em{color:#00e676;font-style:normal}
-    .cta-final p{color:#90a4ae;margin-bottom:32px;font-size:15px}
-    .cta-stack{display:flex;flex-direction:column;gap:14px;max-width:380px;margin:0 auto}
+    .cta-final p{color:#90a4ae;margin-bottom:40px;font-size:17px}
+    .cta-stack{display:flex;flex-direction:column;gap:16px;max-width:420px;margin:0 auto}
 
-    footer{background:#040a12;text-align:center;padding:28px 20px;color:#37474f;font-size:12px}
+    footer{background:#030810;text-align:center;padding:32px 20px;color:#37474f;font-size:13px}
     footer a{color:#00e676}
+
+    @media(max-width:480px){
+      .card{padding:28px 20px}
+      .prosperity-stats{gap:28px}
+    }
   </style>
 </head>
 <body>
 
-<!-- HERO -->
+<!-- ===== HERO ===== -->
 <section class="hero">
-  <div class="hero-badge">🤖 IA · 3 eBooks · 2026</div>
-  <h1>Você recebe o salário<br>e em 2 semanas<br><em>não sabe onde foi?</em></h1>
-  <p class="sub">A maioria das pessoas nunca aprendeu a lidar com dinheiro. A IA vai te ensinar — em 30 dias.</p>
-  <span class="arrow">👇</span>
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+  <div class="hero-badge">🤖 Inteligência Artificial · 3 eBooks · 2026</div>
+  <h1>
+    Você recebe o salário<br>
+    e em 2 semanas<br>
+    <em>não sabe onde foi?</em>
+  </h1>
+  <p class="sub">A maioria das pessoas nunca aprendeu a lidar com dinheiro.<br>A IA vai te ensinar — em apenas <strong style="color:#fff">30 dias.</strong></p>
+  <a href="#ebooks" class="hero-cta">📗 VER OS 3 EBOOKS AGORA</a>
+  <p class="hero-note">🔒 Pagamento seguro via Hotmart · Garantia de 7 dias</p>
+  <span class="scroll-hint">👇</span>
 </section>
 
-<!-- PROOF BAR -->
+<!-- ===== PROOF BAR ===== -->
 <div class="proof-bar">
-  <div class="proof-item"><strong>3</strong><span>eBooks completos</span></div>
-  <div class="proof-item"><strong>30 dias</strong><span>para resultados reais</span></div>
-  <div class="proof-item"><strong>7 dias</strong><span>garantia total</span></div>
-  <div class="proof-item"><strong>100%</strong><span>acesso imediato</span></div>
+  <div class="proof-item"><strong>3</strong><span>EBOOKS COMPLETOS</span></div>
+  <div class="proof-item"><strong>30 dias</strong><span>PARA RESULTADOS REAIS</span></div>
+  <div class="proof-item"><strong>7 dias</strong><span>GARANTIA TOTAL</span></div>
+  <div class="proof-item"><strong>100%</strong><span>ACESSO IMEDIATO</span></div>
 </div>
 
-<!-- PAIN -->
+<!-- ===== PAIN ===== -->
 <section class="pain">
+  <div class="pain-bg"></div>
   <h2>Isso te soa familiar?</h2>
   <ul class="pain-list">
-    <li>Salário some antes do mês acabar</li>
-    <li>Dívidas que parecem não ter fim</li>
-    <li>Zero de reserva de emergência</li>
-    <li>"Não sobra dinheiro" para investir</li>
-    <li>Sonha com renda extra mas não sabe por onde começar</li>
+    <li><span>😰</span> Salário some antes do mês acabar</li>
+    <li><span>💳</span> Dívidas que parecem não ter fim</li>
+    <li><span>😟</span> Zero de reserva de emergência</li>
+    <li><span>📉</span> "Não sobra dinheiro" para investir</li>
+    <li><span>🤔</span> Quer renda extra mas não sabe por onde começar</li>
   </ul>
   <p class="pain-solve">✅ A solução existe — e com IA, é mais simples do que você imagina.</p>
 </section>
 
-<!-- EBOOKS -->
-<section class="ebooks">
+<!-- ===== PROSPERITY ===== -->
+<section class="prosperity">
+  <div class="prosperity-bg"></div>
+  <div class="prosperity-overlay"></div>
+  <h2>Imagine sua vida<br><em style="color:#00e676">daqui a 30 dias</em></h2>
+  <p>Saber exatamente para onde vai cada real. Ter reserva crescendo. Criar renda extra com IA. Investir com segurança.</p>
+  <div class="prosperity-stats">
+    <div class="pstat">
+      <strong>R$ 37</strong>
+      <span>Para começar hoje</span>
+    </div>
+    <div class="pstat">
+      <strong>30 dias</strong>
+      <span>Para ver resultado</span>
+    </div>
+    <div class="pstat">
+      <strong>3</strong>
+      <span>eBooks completos</span>
+    </div>
+  </div>
+  <a href="#ebooks" class="hero-cta" style="display:inline-block;font-size:17px">🚀 QUERO TRANSFORMAR MINHAS FINANÇAS</a>
+</section>
+
+<!-- ===== EBOOKS ===== -->
+<section class="ebooks" id="ebooks">
   <h2 class="sec-title">3 eBooks. Um método <em>completo.</em></h2>
+  <p class="sec-sub">Cada eBook foca em uma fase da sua jornada financeira. Comece pelo primeiro e evolua no seu ritmo.</p>
 
   <!-- eBook 1 -->
   <div class="card c1">
-    <span class="hot-tag">🔥 MAIS VENDIDO</span>
-    <div class="card-num">eBook 01 · Ponto de partida</div>
+    <div class="card-bg-img"></div>
+    <div class="card-overlay"></div>
+    <span class="hot-tag">🔥 MAIS VENDIDO — COMECE AQUI</span>
+    <div class="card-num">eBook 01 · Organização</div>
     <h3>Finanças com IA: O Guia Definitivo para Organizar, Economizar e Criar Renda Extra em 30 Dias</h3>
-    <p class="desc">Para quem quer parar de perder dinheiro e finalmente entender para onde ele vai. Com IA como guia, você chega lá em 30 dias.</p>
+    <p class="desc">Para quem quer parar de perder dinheiro e finalmente entender para onde ele vai. Com IA como seu guia pessoal, você muda sua relação com o dinheiro em 30 dias.</p>
     <ul class="feats">
       <li>Diagnóstico financeiro completo com IA</li>
       <li>Orçamento inteligente que você consegue seguir</li>
-      <li>Estratégias para eliminar dívidas com IA</li>
+      <li>Estratégias com IA para eliminar dívidas</li>
       <li>Método europeu de finanças pessoais</li>
-      <li>Plano de 30 dias passo a passo</li>
+      <li>Plano de 30 dias, dia a dia</li>
       <li>🎁 Bônus: guia completo do App IA Financeiro</li>
     </ul>
-    <div class="urgency">⏰ Oferta por tempo limitado — <strong>61% de desconto ativo agora</strong></div>
+    <div class="urgency">⏰ Promoção por tempo limitado — <strong>61% de desconto ativo agora</strong></div>
     <div class="price-row">
       <span class="price">R$ 37,90</span>
       <span class="old-price">R$ 97,00</span>
       <span class="disc-badge">61% OFF</span>
     </div>
     <a href="https://pay.hotmart.com/Q105871662P" class="btn btn1" target="_blank">📗 QUERO ORGANIZAR MINHAS FINANÇAS — R$ 37,90</a>
-    <p class="btn-note">🔒 Pagamento seguro via Hotmart · PIX, Cartão ou Boleto · Acesso imediato</p>
+    <p class="btn-note">🔒 Pagamento seguro via Hotmart · PIX, Cartão ou Boleto · Acesso imediato após pagamento</p>
   </div>
 
   <!-- eBook 2 -->
   <div class="card c2">
+    <div class="card-bg-img"></div>
+    <div class="card-overlay"></div>
     <div class="card-num">eBook 02 · Renda Extra</div>
     <h3>Renda Extra com IA: 50 Formas Comprovadas de Ganhar Dinheiro com Inteligência Artificial em 2026</h3>
-    <p class="desc">50 formas reais e testadas de gerar renda extra usando IA — muitas sem capital inicial ou precisar aparecer nas redes.</p>
+    <p class="desc">50 formas reais e testadas de gerar renda extra usando IA — muitas sem precisar de capital inicial ou aparecer nas redes sociais.</p>
     <ul class="feats">
       <li>50 oportunidades classificadas por dificuldade e retorno</li>
       <li>Serviços freelance que a IA executa por você</li>
       <li>Como monetizar conteúdo com IA sem aparecer</li>
-      <li>Primeiros R$ 1.000 extras — plano detalhado</li>
+      <li>Primeiros R$ 1.000 extras — plano passo a passo</li>
       <li>Ferramentas gratuitas de IA para cada oportunidade</li>
     </ul>
     <div class="price-row">
@@ -189,16 +408,18 @@
       <span class="disc-badge">62% OFF</span>
     </div>
     <a href="https://go.hotmart.com/N105920073E" class="btn btn2" target="_blank">💰 QUERO CRIAR RENDA EXTRA — R$ 47,90</a>
-    <p class="btn-note">🔒 Pagamento seguro via Hotmart · PIX, Cartão ou Boleto · Acesso imediato</p>
+    <p class="btn-note">🔒 Pagamento seguro via Hotmart · PIX, Cartão ou Boleto · Acesso imediato após pagamento</p>
   </div>
 
   <!-- eBook 3 -->
   <div class="card c3">
+    <div class="card-bg-img"></div>
+    <div class="card-overlay"></div>
     <div class="card-num">eBook 03 · Investimentos</div>
     <h3>Investimentos com IA: Do Zero ao Primeiro Milhão</h3>
     <p class="desc">Para quem já tem controle das finanças e quer fazer o dinheiro trabalhar 24h por dia. IA como seu consultor de investimentos pessoal.</p>
     <ul class="feats">
-      <li>Tesouro Selic, CDB, FIIs e ações explicados pela IA</li>
+      <li>Tesouro Selic, CDB, FIIs e ações — IA explica tudo</li>
       <li>Como a IA analisa riscos e oportunidades por você</li>
       <li>Carteira inteligente para cada perfil de investidor</li>
       <li>Do primeiro R$ 100 investido ao primeiro milhão</li>
@@ -210,23 +431,25 @@
       <span class="disc-badge">61% OFF</span>
     </div>
     <a href="https://go.hotmart.com/Q105922714E" class="btn btn3" target="_blank">📈 QUERO INVESTIR COM IA — R$ 57,90</a>
-    <p class="btn-note">🔒 Pagamento seguro via Hotmart · PIX, Cartão ou Boleto · Acesso imediato</p>
+    <p class="btn-note">🔒 Pagamento seguro via Hotmart · PIX, Cartão ou Boleto · Acesso imediato após pagamento</p>
   </div>
 </section>
 
-<!-- GARANTIA -->
+<!-- ===== GUARANTEE ===== -->
 <section class="guarantee">
+  <div class="guarantee-bg"></div>
   <div class="gbox">
-    <div class="icon">🛡️</div>
-    <h3>Garantia incondicional de 7 dias</h3>
-    <p>Compre sem risco. Se por qualquer motivo você não ficar satisfeito nos primeiros 7 dias, a Hotmart devolve 100% do seu dinheiro. Sem burocracia, sem perguntas.</p>
+    <span class="icon">🛡️</span>
+    <h3>Garantia incondicional<br>de 7 dias</h3>
+    <p>Compre sem risco. Se por qualquer motivo você não ficar satisfeito nos primeiros 7 dias, a Hotmart devolve 100% do seu dinheiro — sem burocracia, sem perguntas.</p>
   </div>
 </section>
 
-<!-- APP BONUS -->
+<!-- ===== APP BONUS ===== -->
 <section class="bonus">
+  <div class="bonus-bg"></div>
   <h2>🎁 Bônus: App IA Financeiro</h2>
-  <p>Quem compra qualquer eBook recebe o guia completo do App IA Financeiro — com dashboard em tempo real, assistente IA Gemini e dicas personalizadas baseadas nos seus dados.</p>
+  <p>Quem compra qualquer eBook recebe o guia completo do App IA Financeiro — com dashboard em tempo real, assistente IA Gemini e dicas financeiras personalizadas nos seus dados.</p>
   <div class="app-chips">
     <span class="chip">📊 Dashboard de ganhos e gastos</span>
     <span class="chip">🤖 Assistente IA Gemini</span>
@@ -236,39 +459,42 @@
   </div>
 </section>
 
-<!-- FAQ -->
+<!-- ===== FAQ ===== -->
 <div class="faq-wrap">
   <div class="faq">
-    <h2 class="sec-title" style="margin-bottom:28px">Dúvidas <em>frequentes</em></h2>
+    <h2 class="sec-title" style="margin-bottom:10px">Dúvidas <em>frequentes</em></h2>
+    <p class="sec-sub" style="margin-bottom:36px">Tudo que você precisa saber antes de comprar</p>
     <div class="faq-item">
       <h4>Como recebo o eBook após a compra?</h4>
-      <p>Imediatamente após o pagamento ser aprovado, você recebe um e-mail com o link de acesso. O processo é 100% automático via Hotmart.</p>
+      <p>Imediatamente após o pagamento ser aprovado, você recebe um e-mail com o link de acesso. O processo é 100% automático via Hotmart — sem esperar.</p>
     </div>
     <div class="faq-item">
       <h4>Posso parcelar no cartão?</h4>
-      <p>Sim. A Hotmart aceita cartão de crédito em até 12x, PIX (com desconto instantâneo) e boleto bancário.</p>
+      <p>Sim. A Hotmart aceita cartão de crédito em até 12x, PIX (aprovação na hora) e boleto bancário.</p>
     </div>
     <div class="faq-item">
       <h4>Funciona para quem está começando do zero?</h4>
-      <p>Especialmente! O eBook 1 (Finanças com IA, R$ 37,90) foi pensado para quem nunca organizou as finanças. Linguagem simples, passo a passo.</p>
+      <p>Especialmente! O eBook 1 (Finanças com IA, R$ 37,90) foi escrito para quem nunca organizou as finanças. Linguagem simples, passo a passo.</p>
     </div>
     <div class="faq-item">
       <h4>Preciso entender de IA para aproveitar os eBooks?</h4>
-      <p>Não. Os eBooks ensinam tudo do zero, incluindo quais ferramentas de IA usar e como — gratuitamente.</p>
+      <p>Não. Os eBooks ensinam quais ferramentas usar e como — todas gratuitas. Você não precisa ter nenhum conhecimento técnico.</p>
     </div>
     <div class="faq-item">
-      <h4>Qual eBook devo comprar primeiro?</h4>
-      <p>Recomendamos o eBook 1 (R$ 37,90). É o mais barato e o ponto de partida ideal. Depois você avança para os outros no seu tempo.</p>
+      <h4>Qual eBook comprar primeiro?</h4>
+      <p>Recomendamos o eBook 1 (R$ 37,90). É o mais acessível e o ponto de partida ideal. Depois você avança para os outros no seu tempo.</p>
     </div>
     <div class="faq-item">
       <h4>Posso comprar os 3?</h4>
-      <p>Sim! Cada eBook foca numa fase: organizar → criar renda → investir. Juntos formam um método financeiro completo com IA.</p>
+      <p>Sim e recomendamos! Cada eBook foca em uma fase: organizar → criar renda → investir. Juntos formam um método financeiro completo com IA.</p>
     </div>
   </div>
 </div>
 
-<!-- CTA FINAL -->
+<!-- ===== CTA FINAL ===== -->
 <section class="cta-final">
+  <div class="cta-final-bg"></div>
+  <div class="cta-final-overlay"></div>
   <h2>Pronto para mudar sua<br><em>vida financeira?</em></h2>
   <p>Escolha seu eBook e comece hoje. Acesso imediato. Garantia de 7 dias. Risco zero.</p>
   <div class="cta-stack">
