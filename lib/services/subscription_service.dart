@@ -2,118 +2,86 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
 
 class SubscriptionService {
-  static const String productId = 'ia_financeiro_mensal';
-
   static final SubscriptionService _instance = SubscriptionService._();
   static SubscriptionService get instance => _instance;
   SubscriptionService._();
 
-  final InAppPurchase _iap = InAppPurchase.instance;
-  StreamSubscription<List<PurchaseDetails>>? _sub;
-
-  bool _isSubscribed = false;
-  bool _isPremiumFirestore = false;
-  bool _isLoading = true;
-  String? _error;
-
-  // Acesso liberado se: debug, Firestore premium, ou Google Play ativo
-  bool get isSubscribed => kDebugMode || _isPremiumFirestore || _isSubscribed;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
+  bool _isPremium = false;
+  bool get isSubscribed => kDebugMode || _isPremium;
 
   final _statusController = StreamController<bool>.broadcast();
   Stream<bool> get statusStream => _statusController.stream;
 
+  StreamSubscription? _firestoreSub;
+
   Future<void> init() async {
-    if (kDebugMode) {
-      _isLoading = false;
-      return;
+    if (kDebugMode) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await _checkPendingActivation(user);
+    _listenToFirestore(user.uid);
+  }
+
+  // Usuário pagou no Hotmart antes de criar conta — ativa automaticamente no 1º login
+  Future<void> _checkPendingActivation(User user) async {
+    final email = user.email?.toLowerCase().trim();
+    if (email == null) return;
+
+    final db = FirebaseFirestore.instance;
+    final pending = await db.collection('pending_activations').doc(email).get();
+    if (!pending.exists) return;
+
+    final data = pending.data()!;
+    final isPremium = data['premium'] == true;
+    final update = <String, dynamic>{
+      'premium': isPremium,
+      'hotmart_email': email,
+      'updated_at': FieldValue.serverTimestamp(),
+    };
+    if (isPremium) {
+      update['premium_until'] = Timestamp.fromDate(
+        DateTime.now().add(const Duration(days: 35)),
+      );
     }
 
-    // Verifica campo premium no Firestore (admin bypass + combo Hotmart)
-    try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
-        final doc = await FirebaseFirestore.instance.collection('usuarios').doc(uid).get();
-        if (doc.exists) {
-          final data = doc.data()!;
-          final premiumUntil = data['premium_until'];
-          if (data['premium'] == true) {
-            _isPremiumFirestore = true;
-          } else if (premiumUntil != null) {
-            final until = (premiumUntil as Timestamp).toDate();
-            _isPremiumFirestore = until.isAfter(DateTime.now());
-          }
-        }
+    await db.collection('usuarios').doc(user.uid).set(update, SetOptions(merge: true));
+    await pending.reference.delete();
+  }
+
+  void _listenToFirestore(String uid) {
+    _firestoreSub?.cancel();
+    _firestoreSub = FirebaseFirestore.instance
+        .collection('usuarios')
+        .doc(uid)
+        .snapshots()
+        .listen((doc) {
+      if (!doc.exists) { _setPremium(false); return; }
+      final data = doc.data()!;
+      bool active = false;
+      if (data['premium'] == true) {
+        final until = data['premium_until'];
+        active = until == null || (until as Timestamp).toDate().isAfter(DateTime.now());
       }
-    } catch (_) {}
-
-    if (_isPremiumFirestore) {
-      _isLoading = false;
-      return;
-    }
-
-    final available = await _iap.isAvailable();
-    if (!available) {
-      _isLoading = false;
-      _error = 'Google Play indisponível';
-      return;
-    }
-
-    _sub = _iap.purchaseStream.listen(_onPurchaseUpdate, onError: (_) {
-      _isLoading = false;
+      _setPremium(active);
     });
-
-    await _iap.restorePurchases();
-
-    // Aguarda resposta do restore (máx 5s)
-    await Future.delayed(const Duration(seconds: 5));
-    _isLoading = false;
-    _statusController.add(_isSubscribed);
   }
 
-  void _onPurchaseUpdate(List<PurchaseDetails> purchases) {
-    for (final p in purchases) {
-      if (p.productID != productId) continue;
-
-      if (p.status == PurchaseStatus.purchased ||
-          p.status == PurchaseStatus.restored) {
-        _isSubscribed = true;
-      } else if (p.status == PurchaseStatus.error) {
-        _error = p.error?.message;
-      }
-
-      if (p.pendingCompletePurchase) {
-        _iap.completePurchase(p);
-      }
-    }
-    _isLoading = false;
-    _statusController.add(_isSubscribed);
+  void _setPremium(bool value) {
+    _isPremium = value;
+    _statusController.add(value);
   }
 
-  Future<String?> subscribe() async {
-    try {
-      final response = await _iap.queryProductDetails({productId});
-      if (response.productDetails.isEmpty) {
-        return 'Produto não encontrado no Google Play';
-      }
-      final param = PurchaseParam(productDetails: response.productDetails.first);
-      await _iap.buyNonConsumable(purchaseParam: param);
-      return null;
-    } catch (e) {
-      return 'Erro ao iniciar assinatura: $e';
-    }
-  }
-
-  Future<void> restore() async {
-    await _iap.restorePurchases();
+  void reset() {
+    _firestoreSub?.cancel();
+    _isPremium = false;
   }
 
   void dispose() {
-    _sub?.cancel();
+    _firestoreSub?.cancel();
     _statusController.close();
   }
 }
