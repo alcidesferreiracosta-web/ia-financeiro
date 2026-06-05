@@ -31,10 +31,14 @@ jobs:
 
       - name: Print keystore SHA1 (para adicionar no Firebase Console)
         run: |
+          APK=build/app/outputs/flutter-apk/app-release.apk
+          echo "=== SHA do certificado do APK ==="
+          keytool -printcert -jarfile "$APK" 2>&1 | grep -E "SHA1|SHA256"
+          echo "=== Debug keystore (fallback) ==="
           keytool -list -v \
             -keystore ~/.android/debug.keystore \
             -alias androiddebugkey \
-            -storepass android -keypass android 2>&1 | grep -E "SHA1|SHA256" || echo "keystore nao encontrado"
+            -storepass android -keypass android 2>&1 | grep -E "SHA1|SHA256" || echo "debug.keystore nao encontrado"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
