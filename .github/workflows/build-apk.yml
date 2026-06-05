@@ -43,3 +43,18 @@ jobs:
           name: ia-financeiro-aab
           path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
+
+      - name: Build signed APK
+        env:
+          KEY_PATH: keystore.jks
+          KEY_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ia-financeiro-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
