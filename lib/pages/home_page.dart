@@ -11,6 +11,7 @@ import 'dicas_ia_page.dart';
 import 'investimentos_page.dart';
 import 'planejamento_page.dart';
 import 'renda_extra_page.dart';
+import 'ebooks_page.dart';
 import '../services/gps_economia_service.dart';
 
 class HomePage extends StatefulWidget {
@@ -270,6 +271,9 @@ class _HomePageState extends State<HomePage> {
                       ],
 
                       const SizedBox(height: 12),
+                      _PerfilFinanceiroCard(ganhos: ganhos, gastos: gastos),
+
+                      const SizedBox(height: 12),
 
                       // Score mini-card
                       GestureDetector(
@@ -318,6 +322,10 @@ class _HomePageState extends State<HomePage> {
                           ]),
                         ),
                       ),
+
+                      const SizedBox(height: 10),
+                      _AlertasInteligentesCard(
+                          gastosDocs: gastosDocs, ganhos: ganhos),
 
                       const SizedBox(height: 16),
 
@@ -402,6 +410,16 @@ class _HomePageState extends State<HomePage> {
                         onTap: () => _ir(const RendaExtraPage()),
                       ),
 
+                      const SizedBox(height: 10),
+
+                      _NavBtn(
+                        label: '📚 eBooks IA Financeiro — 12 títulos',
+                        icon: Icons.menu_book,
+                        cor: Colors.orange,
+                        largo: true,
+                        onTap: () => _ir(const EbooksPage()),
+                      ),
+
                       const SizedBox(height: 12),
 
                       const _EconomiaGeradaCard(),
@@ -477,24 +495,54 @@ class _EconomiaGeradaCard extends StatefulWidget {
 class _EconomiaGeradaCardState extends State<_EconomiaGeradaCard> {
   Map<String, dynamic> _economia = {};
   bool _carregando = true;
+  int _pontos = 0;
+  String _rankTier = '';
 
   @override
   void initState() {
     super.initState();
-    GpsEconomiaService.instance.getEconomiaTotal().then((data) {
-      if (mounted) setState(() { _economia = data; _carregando = false; });
-    });
+    _carregar();
+  }
+
+  Future<void> _carregar() async {
+    final econ = await GpsEconomiaService.instance.getEconomiaTotal();
+    final dados = await GpsEconomiaService.instance.getMeusDados();
+    if (mounted) {
+      setState(() {
+        _economia = econ;
+        _pontos = (dados?['pontos'] as num?)?.toInt() ?? 0;
+        _rankTier = (dados?['rank'] as String?) ?? '';
+        _carregando = false;
+      });
+    }
   }
 
   String _fmt(double v) => 'R\$ ${v.toStringAsFixed(2).replaceAll('.', ',')}';
 
+  Color _rankColor() {
+    switch (_rankTier) {
+      case 'ouro': return const Color(0xFFFFD700);
+      case 'prata': return const Color(0xFFB0BEC5);
+      case 'bronze': return const Color(0xFFFF8F00);
+      default: return const Color(0xFF4CAF50);
+    }
+  }
+
+  String _rankLabel() {
+    switch (_rankTier) {
+      case 'ouro': return '🥇 Nível Ouro';
+      case 'prata': return '🥈 Nível Prata';
+      case 'bronze': return '🥉 Nível Bronze';
+      default: return _rankTier.isEmpty ? '' : '🌱 Iniciante';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_carregando) return const SizedBox.shrink();
-    if (_economia.isEmpty) return const SizedBox.shrink();
-
     final total = _economia.values
         .fold(0.0, (s, v) => s + ((v as num?)?.toDouble() ?? 0));
+    if (total == 0 && _pontos == 0) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -504,45 +552,279 @@ class _EconomiaGeradaCardState extends State<_EconomiaGeradaCard> {
         border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.4)),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Row(children: [
-          Icon(Icons.savings, color: Color(0xFF4CAF50), size: 18),
-          SizedBox(width: 8),
-          Text('Economia Gerada',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14)),
-        ]),
-        const SizedBox(height: 10),
-        ..._economia.entries.map((e) {
-          final val = (e.value as num?)?.toDouble() ?? 0;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Row(children: [
-              Expanded(
-                child: Text('Você economizou em ${e.key}',
-                    style: const TextStyle(
-                        color: Colors.white70, fontSize: 12)),
+        // Header com rank
+        Row(children: [
+          const Icon(Icons.savings, color: Color(0xFF4CAF50), size: 18),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text('Economia via GPS da Economia',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14)),
+          ),
+          if (_rankLabel().isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: _rankColor().withOpacity(0.18),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _rankColor().withOpacity(0.5)),
               ),
-              Text(_fmt(val),
-                  style: const TextStyle(
-                      color: Color(0xFF66BB6A),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13)),
-            ]),
-          );
-        }),
-        const Divider(color: Colors.white12, height: 16),
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          const Text('Total economizado este mês',
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          Text(_fmt(total),
-              style: const TextStyle(
-                  color: Color(0xFF4CAF50),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16)),
+              child: Text(_rankLabel(),
+                  style: TextStyle(
+                      color: _rankColor(),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold)),
+            ),
         ]),
+
+        // Total destaque
+        if (total > 0) ...[
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CAF50).withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(children: [
+              const Text('🏆', style: TextStyle(fontSize: 26)),
+              const SizedBox(width: 12),
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('Você economizou este mês',
+                    style: TextStyle(color: Colors.white60, fontSize: 11)),
+                Text(_fmt(total),
+                    style: const TextStyle(
+                        color: Color(0xFF4CAF50),
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold)),
+              ]),
+            ]),
+          ),
+        ],
+
+        if (_pontos > 0) ...[
+          const SizedBox(height: 8),
+          Row(children: [
+            const Icon(Icons.stars, color: Color(0xFFFFD700), size: 14),
+            const SizedBox(width: 4),
+            Text('$_pontos pontos acumulados no ranking',
+                style: const TextStyle(color: Colors.white54, fontSize: 12)),
+          ]),
+        ],
+
+        if (_economia.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          const Divider(color: Colors.white12),
+          const SizedBox(height: 4),
+          ..._economia.entries.map((e) {
+            final val = (e.value as num?)?.toDouble() ?? 0;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(children: [
+                Expanded(
+                  child: Text('em ${e.key}',
+                      style: const TextStyle(
+                          color: Colors.white54, fontSize: 12)),
+                ),
+                Text(_fmt(val),
+                    style: const TextStyle(
+                        color: Color(0xFF66BB6A),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13)),
+              ]),
+            );
+          }),
+        ],
+      ]),
+    );
+  }
+}
+
+// ── Perfil Financeiro ─────────────────────────────────────────────────────────
+
+class _PerfilFinanceiroCard extends StatelessWidget {
+  final double ganhos;
+  final double gastos;
+  const _PerfilFinanceiroCard({required this.ganhos, required this.gastos});
+
+  @override
+  Widget build(BuildContext context) {
+    if (ganhos <= 0) return const SizedBox.shrink();
+    final ratio = (gastos / ganhos).clamp(0.0, 1.5);
+    final String perfil;
+    final String emoji;
+    final Color cor;
+    final String desc;
+    if (ratio < 0.5) {
+      perfil = 'Econômico';
+      emoji = '🌿';
+      cor = const Color(0xFF4CAF50);
+      desc = 'Você gasta menos de 50% da renda. Parabéns!';
+    } else if (ratio <= 0.8) {
+      perfil = 'Equilibrado';
+      emoji = '⚖️';
+      cor = const Color(0xFFFF9800);
+      desc = 'No caminho certo. Tente aumentar sua margem de economia.';
+    } else {
+      perfil = 'Gastador';
+      emoji = '🔥';
+      cor = const Color(0xFFF44336);
+      desc = 'Gastos acima de 80% da renda. Revise o orçamento!';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: cor.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cor.withOpacity(0.25)),
+      ),
+      child: Row(children: [
+        Text(emoji, style: const TextStyle(fontSize: 28)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Text('Perfil: ',
+                  style: TextStyle(color: Colors.white54, fontSize: 12)),
+              Text(perfil,
+                  style: TextStyle(
+                      color: cor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold)),
+            ]),
+            const SizedBox(height: 3),
+            Text(desc,
+                style: const TextStyle(
+                    color: Colors.white38, fontSize: 11, height: 1.3)),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: ratio.clamp(0.0, 1.0),
+                backgroundColor: Colors.white10,
+                valueColor: AlwaysStoppedAnimation(cor),
+                minHeight: 4,
+              ),
+            ),
+          ]),
+        ),
+        const SizedBox(width: 10),
+        Text('${(ratio * 100).round()}%',
+            style: TextStyle(
+                color: cor, fontSize: 20, fontWeight: FontWeight.bold)),
+      ]),
+    );
+  }
+}
+
+// ── Alertas Inteligentes ──────────────────────────────────────────────────────
+
+class _AlertasInteligentesCard extends StatefulWidget {
+  final List<QueryDocumentSnapshot> gastosDocs;
+  final double ganhos;
+  const _AlertasInteligentesCard(
+      {required this.gastosDocs, required this.ganhos});
+
+  @override
+  State<_AlertasInteligentesCard> createState() =>
+      _AlertasInteligentesCardState();
+}
+
+class _AlertasInteligentesCardState extends State<_AlertasInteligentesCard> {
+  Map<String, dynamic> _economia = {};
+
+  @override
+  void initState() {
+    super.initState();
+    GpsEconomiaService.instance
+        .getEconomiaTotal()
+        .then((d) { if (mounted) setState(() => _economia = d); });
+  }
+
+  String _fmt(double v) =>
+      'R\$ ${v.toStringAsFixed(2).replaceAll('.', ',')}';
+
+  List<String> _gerarAlertas() {
+    final lista = <String>[];
+    final docs = widget.gastosDocs;
+
+    final cats = <String, double>{};
+    for (final d in docs) {
+      final cat = d['categoria'] as String? ?? 'Outros';
+      cats[cat] = (cats[cat] ?? 0) + ((d['valor'] as num?)?.toDouble() ?? 0);
+    }
+    if (cats.isNotEmpty) {
+      final top = cats.entries.reduce((a, b) => a.value > b.value ? a : b);
+      lista.add(
+          'Você gastou ${_fmt(top.value)} em ${top.key} este mês — veja promoções no GPS da Economia!');
+    }
+
+    if (_economia.isNotEmpty) {
+      final total = _economia.values
+          .fold(0.0, (s, v) => s + ((v as num?)?.toDouble() ?? 0));
+      if (total > 0) {
+        lista.add('Você já economizou ${_fmt(total)} usando o GPS da Economia este mês. Continue assim!');
+      }
+    }
+
+    int finsDeSemana = 0;
+    for (final d in docs) {
+      try {
+        final ts = d['data'];
+        if (ts is Timestamp) {
+          final dt = ts.toDate();
+          if (dt.weekday >= 6) finsDeSemana++;
+        }
+      } catch (_) {}
+    }
+    if (finsDeSemana >= 4) {
+      lista.add('Você tem $finsDeSemana gastos nos fins de semana. Planeje antes de sair para economizar mais!');
+    }
+
+    return lista.take(2).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final alertas = _gerarAlertas();
+    if (alertas.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D2137),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF2196F3).withOpacity(0.3)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Row(children: [
+          Icon(Icons.auto_awesome, color: Color(0xFF64B5F6), size: 15),
+          SizedBox(width: 6),
+          Text('Alertas Inteligentes',
+              style: TextStyle(
+                  color: Color(0xFF64B5F6),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13)),
+        ]),
+        const SizedBox(height: 8),
+        ...alertas.map((a) => Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('💡', style: TextStyle(fontSize: 12)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                        child: Text(a,
+                            style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                height: 1.4))),
+                  ]),
+            )),
       ]),
     );
   }

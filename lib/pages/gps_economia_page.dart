@@ -83,6 +83,7 @@ class GpsEconomiaPage extends StatefulWidget {
 
 class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
   final _mapController = MapController();
+  final _buscaCtrl = TextEditingController();
   Position? _userPos;
   double _raioKm = 5;
   String _categoriaFiltro = 'Todas';
@@ -90,6 +91,8 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
   bool _seguirUsuario = true;
   StreamSubscription<Position>? _posSub;
   Stream<List<PromoModel>>? _promoStream;
+  _NavDestino? _tapDestino;
+  bool _buscando = false;
 
   @override
   void initState() {
@@ -100,6 +103,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
   @override
   void dispose() {
     _posSub?.cancel();
+    _buscaCtrl.dispose();
     super.dispose();
   }
 
@@ -161,7 +165,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'O GPS de Economia usa sua localização para:',
+                  'O GPS da Economia usa sua localização para:',
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
                 const SizedBox(height: 12),
@@ -234,7 +238,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
     }
   }
 
-  void _mostrarDetalhe(PromoModel p) {
+  void _mostrarDetalhe(PromoModel p, List<PromoModel> todasPromos) {
     GpsEconomiaService.instance.registrarAcesso(p.id, p.criadoPorUid);
     showModalBottomSheet(
       context: context,
@@ -242,13 +246,14 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
       backgroundColor: Colors.transparent,
       builder: (_) => _PromoDetalheSheet(
         promo: p,
-        onIrAteLa: () => _escolherApp(p),
+        outrasPromos: todasPromos,
+        onIrAteLa: () => _escolherApp(_NavDestino.fromPromo(p)),
       ),
     );
   }
 
-  void _escolherApp(PromoModel p) {
-    Navigator.pop(context); // fecha o bottom sheet de detalhe
+  void _escolherApp(_NavDestino destino, {bool fecharSheet = true}) {
+    if (fecharSheet) Navigator.pop(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -267,13 +272,26 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                 decoration: BoxDecoration(
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 10),
+            Text(destino.nome,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
+            if (destino.endereco.isNotEmpty)
+              Text(destino.endereco,
+                  style: const TextStyle(color: Colors.white38, fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
             const SizedBox(height: 16),
             const Text('Como deseja ir até lá?',
                 style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
+                    color: Colors.white60,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500)),
+            const SizedBox(height: 14),
             // GPS no próprio app — botão destaque
             GestureDetector(
               onTap: () {
@@ -281,7 +299,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => _NavegacaoPage(destino: p)),
+                      builder: (_) => _NavegacaoPage(destino: destino)),
                 );
               },
               child: Container(
@@ -334,7 +352,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                   Navigator.pop(context);
                   final url = Uri.parse(
                       'https://www.google.com/maps/dir/?api=1'
-                      '&destination=${p.lat},${p.lng}'
+                      '&destination=${destino.lat},${destino.lng}'
                       '&travelmode=driving');
                   await launchUrl(url,
                       mode: LaunchMode.externalApplication);
@@ -349,7 +367,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                 onTap: () async {
                   Navigator.pop(context);
                   final url = Uri.parse(
-                      'https://waze.com/ul?ll=${p.lat},${p.lng}&navigate=yes');
+                      'https://waze.com/ul?ll=${destino.lat},${destino.lng}&navigate=yes');
                   await launchUrl(url,
                       mode: LaunchMode.externalApplication);
                 },
@@ -359,6 +377,160 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
         ),
       ),
     );
+  }
+
+  // Toque no mapa: geocodificação reversa + mostrar destino
+  Future<void> _mapaTap(TapPosition _, LatLng latLng) async {
+    try {
+      final url = Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse'
+          '?lat=${latLng.latitude}&lon=${latLng.longitude}'
+          '&format=json&accept-language=pt-BR');
+      final resp = await http.get(url, headers: {
+        'User-Agent': 'IAFinanceiro/1.0 (alcidesferreira.costa@hotmail.com)'
+      }).timeout(const Duration(seconds: 6));
+      if (!mounted) return;
+      String nome = 'Local selecionado';
+      String endereco = '';
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body);
+        nome = data['name'] as String? ??
+            data['display_name']?.toString().split(',').first ??
+            'Local selecionado';
+        endereco = data['display_name'] as String? ?? '';
+      }
+      setState(() => _tapDestino = _NavDestino(
+            nome: nome,
+            endereco: endereco,
+            lat: latLng.latitude,
+            lng: latLng.longitude,
+          ));
+      _mostrarTapSheet(_tapDestino!);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _tapDestino = _NavDestino(
+            nome: 'Local selecionado',
+            endereco: '',
+            lat: latLng.latitude,
+            lng: latLng.longitude,
+          ));
+      _mostrarTapSheet(_tapDestino!);
+    }
+  }
+
+  void _mostrarTapSheet(_NavDestino d) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF0A1628),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                  color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+          const SizedBox(height: 14),
+          Row(children: [
+            const Icon(Icons.location_pin, color: Color(0xFF4CAF50), size: 22),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(d.nome,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15)),
+              if (d.endereco.isNotEmpty)
+                Text(d.endereco,
+                    style: const TextStyle(color: Colors.white38, fontSize: 11),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
+            ])),
+          ]),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(context);
+                _escolherApp(d, fecharSheet: false);
+              },
+              icon: const Icon(Icons.navigation_rounded, color: Colors.white),
+              label: const Text('Ir até lá',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1565C0),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+        ]),
+      ),
+    ).whenComplete(() {
+      if (mounted) setState(() => _tapDestino = null);
+    });
+  }
+
+  // Busca por endereço via Nominatim
+  Future<void> _pesquisarEndereco(String query) async {
+    if (query.trim().isEmpty) return;
+    setState(() => _buscando = true);
+    FocusScope.of(context).unfocus();
+    try {
+      final url = Uri.parse(
+          'https://nominatim.openstreetmap.org/search'
+          '?q=${Uri.encodeComponent(query)}'
+          '&format=json&limit=1&accept-language=pt-BR&countrycodes=BR');
+      final resp = await http.get(url, headers: {
+        'User-Agent': 'IAFinanceiro/1.0 (alcidesferreira.costa@hotmail.com)'
+      }).timeout(const Duration(seconds: 8));
+      if (!mounted) return;
+      if (resp.statusCode == 200) {
+        final list = jsonDecode(resp.body) as List;
+        if (list.isNotEmpty) {
+          final item = list[0] as Map;
+          final lat = double.parse(item['lat'].toString());
+          final lng = double.parse(item['lon'].toString());
+          final nome = item['display_name'].toString().split(',').first;
+          final endereco = item['display_name'] as String? ?? '';
+          final dest = _NavDestino(
+              nome: nome, endereco: endereco, lat: lat, lng: lng);
+          _mapController.move(LatLng(lat, lng), 16);
+          setState(() {
+            _tapDestino = dest;
+            _buscando = false;
+          });
+          _mostrarTapSheet(dest);
+          return;
+        }
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Endereço não encontrado'),
+              backgroundColor: Colors.orange),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Erro ao buscar endereço'),
+              backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _buscando = false);
+    }
   }
 
   @override
@@ -393,7 +565,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                       fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               const Text(
-                  'Ative a localização do dispositivo para usar o GPS de Economia',
+                  'Ative a localização do dispositivo para usar o GPS da Economia',
                   style: TextStyle(color: Colors.white60),
                   textAlign: TextAlign.center),
               const SizedBox(height: 24),
@@ -427,6 +599,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                 initialCenter:
                     LatLng(_userPos!.latitude, _userPos!.longitude),
                 initialZoom: 14,
+                onTap: _mapaTap,
                 onPositionChanged: (_, hasGesture) {
                   if (hasGesture && _seguirUsuario) {
                     setState(() => _seguirUsuario = false);
@@ -478,13 +651,36 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                     // Promoções
                     ...promos.map((p) => Marker(
                           point: LatLng(p.lat, p.lng),
-                          width: 52,
-                          height: 64,
+                          width: 70,
+                          height: 84,
                           child: GestureDetector(
-                            onTap: () => _mostrarDetalhe(p),
+                            onTap: () => _mostrarDetalhe(p, promos),
                             child: _PromoMarker(p),
                           ),
                         )),
+                    // Destino selecionado pelo toque
+                    if (_tapDestino != null)
+                      Marker(
+                        point: LatLng(_tapDestino!.lat, _tapDestino!.lng),
+                        width: 40,
+                        height: 48,
+                        child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1565C0),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2.5),
+                              boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 8)],
+                            ),
+                            child: const Icon(Icons.location_pin, color: Colors.white, size: 20),
+                          ),
+                          CustomPaint(
+                              size: const Size(10, 6),
+                              painter: _TrianglePainter(const Color(0xFF1565C0))),
+                        ]),
+                      ),
                   ],
                 ),
               ],
@@ -514,7 +710,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                   const Icon(Icons.location_on,
                       color: Color(0xFF4CAF50), size: 20),
                   const SizedBox(width: 8),
-                  const Text('GPS de Economia',
+                  const Text('GPS da Economia',
                       style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -535,6 +731,53 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                     child: const Icon(Icons.emoji_events,
                         color: Color(0xFFFFD700), size: 22),
                   ),
+                ]),
+              ),
+
+              const SizedBox(height: 8),
+
+              // Busca por endereço
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A1628).withOpacity(0.96),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white12),
+                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                ),
+                child: Row(children: [
+                  const SizedBox(width: 12),
+                  const Icon(Icons.search, color: Colors.white38, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _buscaCtrl,
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                      textInputAction: TextInputAction.search,
+                      onSubmitted: _pesquisarEndereco,
+                      decoration: const InputDecoration(
+                        hintText: 'Buscar endereço ou local...',
+                        hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                        border: InputBorder.none,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  if (_buscando)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              color: Color(0xFF4CAF50), strokeWidth: 2)),
+                    )
+                  else
+                    IconButton(
+                      icon: const Icon(Icons.arrow_forward,
+                          color: Color(0xFF4CAF50), size: 20),
+                      onPressed: () => _pesquisarEndereco(_buscaCtrl.text),
+                    ),
                 ]),
               ),
 
@@ -673,8 +916,21 @@ class _PromoMarker extends StatelessWidget {
         child: Icon(categoriaIcon(p.categoria), color: Colors.white, size: 20),
       ),
       CustomPaint(
-        size: const Size(12, 8),
+        size: const Size(10, 6),
         painter: _TrianglePainter(cor),
+      ),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+        decoration: BoxDecoration(
+          color: cor,
+          borderRadius: BorderRadius.circular(6),
+          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3)],
+        ),
+        child: Text(
+          'R\$ ${p.valorPromo.toStringAsFixed(2).replaceAll('.', ',')}',
+          style: const TextStyle(
+              color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+        ),
       ),
     ]);
   }
@@ -705,8 +961,13 @@ class _TrianglePainter extends CustomPainter {
 class _PromoDetalheSheet extends StatefulWidget {
   final PromoModel promo;
   final VoidCallback onIrAteLa;
+  final List<PromoModel> outrasPromos;
 
-  const _PromoDetalheSheet({required this.promo, required this.onIrAteLa});
+  const _PromoDetalheSheet({
+    required this.promo,
+    required this.onIrAteLa,
+    this.outrasPromos = const [],
+  });
 
   @override
   State<_PromoDetalheSheet> createState() => _PromoDetalheSheetState();
@@ -719,6 +980,40 @@ class _PromoDetalheSheetState extends State<_PromoDetalheSheet> {
   bool _registrouEconomia = false;
 
   PromoModel get p => widget.promo;
+
+  Widget _buildMediaRegional() {
+    final mesmaCategoria = widget.outrasPromos
+        .where((x) => x.categoria == p.categoria && x.id != p.id)
+        .toList();
+    if (mesmaCategoria.isEmpty) return const SizedBox.shrink();
+    final media = mesmaCategoria.fold(0.0, (s, x) => s + x.valorPromo) /
+        mesmaCategoria.length;
+    final diff = media - p.valorPromo;
+    if (diff <= 0) return const SizedBox.shrink();
+    final pct = (diff / media * 100).round();
+    return Container(
+      margin: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1B5E20).withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.4)),
+      ),
+      child: Row(children: [
+        const Icon(Icons.trending_down, color: Color(0xFF4CAF50), size: 14),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            '$pct% abaixo da média da região (R\$ ${media.toStringAsFixed(2).replaceAll('.', ',')})',
+            style: const TextStyle(
+                color: Color(0xFF66BB6A),
+                fontSize: 12,
+                fontWeight: FontWeight.w600),
+          ),
+        ),
+      ]),
+    );
+  }
 
   String _trustLabel() {
     switch (p.trustLevel) {
@@ -875,6 +1170,8 @@ class _PromoDetalheSheetState extends State<_PromoDetalheSheet> {
                           'Você economiza R\$ ${p.economia!.toStringAsFixed(2)}',
                           style: const TextStyle(
                               color: Color(0xFF66BB6A), fontSize: 13)),
+
+                    _buildMediaRegional(),
 
                     const SizedBox(height: 12),
 
@@ -1219,10 +1516,36 @@ class _PermissaoItem extends StatelessWidget {
   }
 }
 
+// ── Destino genérico de navegação ────────────────────────────────────────────
+
+class _NavDestino {
+  final String nome;
+  final String endereco;
+  final double lat;
+  final double lng;
+  final String categoria;
+
+  const _NavDestino({
+    required this.nome,
+    required this.endereco,
+    required this.lat,
+    required this.lng,
+    this.categoria = 'Outros',
+  });
+
+  factory _NavDestino.fromPromo(PromoModel p) => _NavDestino(
+        nome: p.nomeEstabelecimento,
+        endereco: p.endereco,
+        lat: p.lat,
+        lng: p.lng,
+        categoria: p.categoria,
+      );
+}
+
 // ── Página de Navegação GPS ──────────────────────────────────────────────────
 
 class _NavegacaoPage extends StatefulWidget {
-  final PromoModel destino;
+  final _NavDestino destino;
   const _NavegacaoPage({required this.destino});
 
   @override
@@ -1442,7 +1765,7 @@ class _NavegacaoPageState extends State<_NavegacaoPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(dest.nomeEstabelecimento,
+                      Text(dest.nome,
                           style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
