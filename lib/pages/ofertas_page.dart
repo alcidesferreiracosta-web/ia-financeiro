@@ -322,7 +322,7 @@ class _KiwifyKitsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(children: [
       // 3 kits
-      ...EbooksPage.kits.map((kit) {
+      ...EbooksPage.kitsJornada.map((kit) {
         final cor = kit['cor'] as Color;
         return GestureDetector(
           onTap: () => onAbrir(kit['url'] as String),
