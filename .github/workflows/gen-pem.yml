@@ -1,0 +1,22 @@
+name: Export PEM certificate (one-time)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decode keystore and export PEM
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > keystore.jks
+          keytool -export -rfc \
+            -keystore keystore.jks \
+            -alias "${{ secrets.KEY_ALIAS }}" \
+            -storepass "${{ secrets.STORE_PASSWORD }}" \
+            -file upload_certificate.pem
+          echo "=== PEM BASE64 ==="
+          base64 -w 0 upload_certificate.pem
+          echo ""
+          echo "=== PEM CONTENT ==="
+          cat upload_certificate.pem
