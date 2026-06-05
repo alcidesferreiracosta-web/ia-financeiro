@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'ebooks_page.dart';
 import 'score_page.dart';
 
 // ─── Veredicto IA ─────────────────────────────────────────────────────────────
@@ -110,14 +111,16 @@ class _OfertasPageState extends State<OfertasPage> {
                       textInputAction: TextInputAction.search,
                       onSubmitted: (_) => _buscar(),
                       decoration: InputDecoration(
-                        hintText: 'Buscar no Google Shopping...',
+                        hintText: 'Buscar produto no Google Shopping...',
                         hintStyle: const TextStyle(color: Colors.white38, fontSize: 13),
-                        prefixIcon: const Icon(Icons.search, color: Colors.white38, size: 20),
+                        prefixIcon: const Icon(Icons.search, color: Colors.orange, size: 24),
                         suffixIcon: null,
                         filled: true,
                         fillColor: Colors.white10,
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.orange, width: 0.5)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.orange, width: 1.5)),
                       ),
                     ),
                   ),
@@ -125,11 +128,15 @@ class _OfertasPageState extends State<OfertasPage> {
                   GestureDetector(
                     onTap: _searchCtrl.text.isNotEmpty ? _limparBusca : _buscar,
                     child: Container(
-                      padding: const EdgeInsets.all(11),
-                      decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFFFF8F00), Color(0xFFE65100)]),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 3))],
+                      ),
                       child: Icon(
                         _searchCtrl.text.isNotEmpty ? Icons.close : Icons.search,
-                        color: Colors.white, size: 20,
+                        color: Colors.white, size: 26,
                       ),
                     ),
                   ),
@@ -188,6 +195,16 @@ class _OfertasFirestore extends StatelessWidget {
             const SizedBox(height: 14),
             _IaConselhoCard(saldo: saldo, ganhos: ganhos, score: score),
             const SizedBox(height: 18),
+
+            // ── Kits & eBooks Kiwify ──────────────────────────
+            const _SecaoHeader(
+              titulo: '📚 eBooks & Kits — IA Financeiro',
+              subtitulo: 'Aprenda e ganhe mais com inteligência artificial',
+            ),
+            const SizedBox(height: 12),
+            _KiwifyKitsSection(onAbrir: onAbrir),
+            const SizedBox(height: 18),
+
             if (ebooks.isNotEmpty) ...[
               const _SecaoHeader(titulo: '📘 Aprenda e Ganhe Mais', subtitulo: 'Conteúdo que transforma sua vida financeira'),
               const SizedBox(height: 10),
@@ -294,6 +311,123 @@ class _SecaoHeader extends StatelessWidget {
     Text(titulo, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
     Text(subtitulo, style: const TextStyle(color: Colors.white38, fontSize: 12)),
   ]);
+}
+
+// ─── Seção Kiwify Kits ────────────────────────────────────────────────────────
+class _KiwifyKitsSection extends StatelessWidget {
+  final void Function(String) onAbrir;
+  const _KiwifyKitsSection({required this.onAbrir});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      // 3 kits
+      ...EbooksPage.kits.map((kit) {
+        final cor = kit['cor'] as Color;
+        return GestureDetector(
+          onTap: () => onAbrir(kit['url'] as String),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: cor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: cor.withOpacity(0.45)),
+            ),
+            child: Row(children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration:
+                    BoxDecoration(color: cor, borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.auto_stories, color: Colors.white, size: 26),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Text(kit['titulo'] as String,
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(6)),
+                      child: Text(kit['badge'] as String,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ]),
+                  const SizedBox(height: 2),
+                  Text(kit['subtitulo'] as String,
+                      style:
+                          const TextStyle(color: Colors.white54, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  Row(children: [
+                    Text(kit['de'] as String,
+                        style: const TextStyle(
+                            color: Colors.white38,
+                            fontSize: 11,
+                            decoration: TextDecoration.lineThrough,
+                            decorationColor: Colors.white38)),
+                    const SizedBox(width: 8),
+                    Text(kit['preco'] as String,
+                        style: const TextStyle(
+                            color: Colors.orange,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold)),
+                  ]),
+                ]),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(10)),
+                child: const Text('Comprar',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12)),
+              ),
+            ]),
+          ),
+        );
+      }),
+      // Botão ver todos
+      GestureDetector(
+        onTap: () => Navigator.push(context,
+            MaterialPageRoute(builder: (_) => const EbooksPage())),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 13),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.menu_book, color: Colors.white54, size: 18),
+              SizedBox(width: 8),
+              Text('Ver todos os 12 eBooks individuais',
+                  style: TextStyle(color: Colors.white54, fontSize: 13)),
+              SizedBox(width: 4),
+              Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 12),
+            ],
+          ),
+        ),
+      ),
+    ]);
+  }
 }
 
 // ─── Card eBook (usa link_afiliado direto) ────────────────────────────────────
