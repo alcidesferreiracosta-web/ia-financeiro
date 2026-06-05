@@ -610,7 +610,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                 TileLayer(
                   urlTemplate:
                       'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.ia_financeiro',
+                  userAgentPackageName: 'com.mycompany.iafinanceiro',
                   maxNativeZoom: 19,
                 ),
                 CircleLayer(circles: [
@@ -638,8 +638,8 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                     // Promoções
                     ...promos.map((p) => Marker(
                           point: LatLng(p.lat, p.lng),
-                          width: 70,
-                          height: 84,
+                          width: 90,
+                          height: 100,
                           child: GestureDetector(
                             onTap: () => _mostrarDetalhe(p, promos),
                             child: _PromoMarker(p),
@@ -1077,36 +1077,56 @@ class _PromoMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cor = categoriaColor(p.categoria);
+    final nome = p.nomeEstabelecimento.length > 14
+        ? '${p.nomeEstabelecimento.substring(0, 13)}…'
+        : p.nomeEstabelecimento;
     return Column(mainAxisSize: MainAxisSize.min, children: [
+      // Ícone da categoria
       Container(
-        width: 44,
-        height: 44,
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
           color: cor,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2.5),
+          border: Border.all(color: Colors.white, width: 2),
           boxShadow: [
-            BoxShadow(color: cor.withOpacity(0.5), blurRadius: 8, spreadRadius: 1)
+            BoxShadow(color: cor.withOpacity(0.55), blurRadius: 8, spreadRadius: 1)
           ],
         ),
-        child: Icon(categoriaIcon(p.categoria), color: Colors.white, size: 20),
+        child: Icon(categoriaIcon(p.categoria), color: Colors.white, size: 18),
       ),
+      // Triângulo apontando para o local
       CustomPaint(
         size: const Size(10, 6),
         painter: _TrianglePainter(cor),
       ),
+      // Label: nome + preço
       Container(
-        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+        constraints: const BoxConstraints(maxWidth: 86),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
           color: cor,
-          borderRadius: BorderRadius.circular(6),
-          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 3)],
+          borderRadius: BorderRadius.circular(7),
+          boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],
         ),
-        child: Text(
-          'R\$ ${p.valorPromo.toStringAsFixed(2).replaceAll('.', ',')}',
-          style: const TextStyle(
-              color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
-        ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(
+            nome,
+            style: const TextStyle(
+                color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            'R\$ ${p.valorPromo.toStringAsFixed(2).replaceAll('.', ',')}',
+            style: TextStyle(
+                color: Colors.white.withOpacity(0.85),
+                fontSize: 8,
+                fontWeight: FontWeight.w500),
+            textAlign: TextAlign.center,
+          ),
+        ]),
       ),
     ]);
   }
@@ -1835,7 +1855,7 @@ class _NavegacaoPageState extends State<_NavegacaoPage> {
             TileLayer(
               urlTemplate:
                   'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
-              userAgentPackageName: 'com.example.ia_financeiro',
+              userAgentPackageName: 'com.mycompany.iafinanceiro',
               maxNativeZoom: 19,
             ),
             if (_rotaPontos.isNotEmpty)
