@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/promocao_model.dart';
@@ -119,11 +121,26 @@ class _CadastrarPromocaoPageState extends State<CadastrarPromocaoPage> {
         initialPos: _localSelecionado ??
             LatLng(widget.userPos?.latitude ?? -15.7801,
                 widget.userPos?.longitude ?? -47.9292),
-        onConfirm: (pos) {
+        onConfirm: (pos, nome, endereco) {
           setState(() {
             _localSelecionado = pos;
             _escolhendoLocal = false;
           });
+          if (nome != null && nome.isNotEmpty && _nomeCtrl.text.isEmpty) {
+            setState(() => _nomeCtrl.text = nome);
+          }
+          if (endereco != null &&
+              endereco.isNotEmpty &&
+              _enderecoCtrl.text.isEmpty) {
+            setState(() => _enderecoCtrl.text = endereco);
+          }
+          if (nome != null && nome.isNotEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('✅ $nome detectado e preenchido!'),
+              backgroundColor: const Color(0xFF4CAF50),
+              duration: const Duration(seconds: 2),
+            ));
+          }
         },
         onCancel: () => setState(() => _escolhendoLocal = false),
       );
@@ -443,7 +460,7 @@ class _CadastrarPromocaoPageState extends State<CadastrarPromocaoPage> {
 
 class _MapaPicker extends StatefulWidget {
   final LatLng initialPos;
-  final ValueChanged<LatLng> onConfirm;
+  final void Function(LatLng pos, String? nome, String? endereco) onConfirm;
   final VoidCallback onCancel;
 
   const _MapaPicker(
@@ -458,6 +475,9 @@ class _MapaPicker extends StatefulWidget {
 class _MapaPickerState extends State<_MapaPicker> {
   late LatLng _selected;
   final _mapController = MapController();
+  String? _nomeDetectado;
+  String? _enderecoDetectado;
+  bool _buscandoPOI = false;
 
   @override
   void initState() {
@@ -471,6 +491,60 @@ class _MapaPickerState extends State<_MapaPicker> {
       final ll = LatLng(pos.latitude, pos.longitude);
       setState(() => _selected = ll);
       _mapController.move(ll, 17);
+      _detectarNegocio(ll);
+    }
+  }
+
+  Future<void> _detectarNegocio(LatLng point) async {
+    if (!mounted) return;
+    setState(() {
+      _buscandoPOI = true;
+      _nomeDetectado = null;
+      _enderecoDetectado = null;
+    });
+    try {
+      final url = Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse'
+          '?lat=${point.latitude}&lon=${point.longitude}'
+          '&format=json&accept-language=pt-BR');
+      final resp = await http.get(url,
+          headers: {'User-Agent': 'IAFinanceiro/1.0'}).timeout(
+        const Duration(seconds: 8),
+      );
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map<String, dynamic>;
+        final nome = data['name'] as String?;
+        final addr = data['address'] as Map<String, dynamic>?;
+        final road = addr?['road'] as String? ??
+            addr?['pedestrian'] as String? ?? '';
+        final number = addr?['house_number'] as String? ?? '';
+        final suburb = addr?['suburb'] as String? ??
+            addr?['neighbourhood'] as String? ??
+            addr?['quarter'] as String? ?? '';
+        final city = addr?['city'] as String? ??
+            addr?['town'] as String? ??
+            addr?['village'] as String? ?? '';
+        final parts = [road, number, suburb]
+            .where((s) => s.isNotEmpty)
+            .join(', ');
+        final endFmt = parts.isNotEmpty
+            ? (city.isNotEmpty ? '$parts — $city' : parts)
+            : city;
+        if (mounted) {
+          setState(() {
+            _nomeDetectado =
+                (nome != null && nome.isNotEmpty) ? nome : null;
+            _enderecoDetectado = endFmt.isNotEmpty
+                ? endFmt
+                : (data['display_name'] as String?);
+            _buscandoPOI = false;
+          });
+        }
+      } else {
+        if (mounted) setState(() => _buscandoPOI = false);
+      }
+    } catch (_) {
+      if (mounted) setState(() => _buscandoPOI = false);
     }
   }
 
@@ -483,14 +557,15 @@ class _MapaPickerState extends State<_MapaPicker> {
         foregroundColor: Colors.white,
         title: const Text('Selecione o local'),
         leading: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: widget.onCancel),
+            icon: const Icon(Icons.close), onPressed: widget.onCancel),
         actions: [
           TextButton(
-            onPressed: () => widget.onConfirm(_selected),
+            onPressed: () => widget.onConfirm(
+                _selected, _nomeDetectado, _enderecoDetectado),
             child: const Text('Confirmar',
                 style: TextStyle(
-                    color: Color(0xFF4CAF50), fontWeight: FontWeight.bold)),
+                    color: Color(0xFF4CAF50),
+                    fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -500,7 +575,10 @@ class _MapaPickerState extends State<_MapaPicker> {
           options: MapOptions(
             initialCenter: _selected,
             initialZoom: 16,
-            onTap: (_, point) => setState(() => _selected = point),
+            onTap: (_, point) {
+              setState(() => _selected = point);
+              _detectarNegocio(point);
+            },
           ),
           children: [
             TileLayer(
@@ -523,23 +601,118 @@ class _MapaPickerState extends State<_MapaPicker> {
             ]),
           ],
         ),
+
+        // Dica no topo
         Positioned(
           top: 12,
           left: 16,
           right: 16,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: const Color(0xFF0A1628).withOpacity(0.95),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Text(
-              'Toque no mapa para marcar o local exato da promoção',
+              'Toque no nome do estabelecimento no mapa para pré-preencher',
               style: TextStyle(color: Colors.white70, fontSize: 13),
               textAlign: TextAlign.center,
             ),
           ),
         ),
+
+        // Card com negócio detectado
+        Positioned(
+          bottom: 90,
+          left: 16,
+          right: 16,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            child: _buscandoPOI
+                ? Container(
+                    key: const ValueKey('loading'),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0A1628).withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                  color: Color(0xFF4CAF50), strokeWidth: 2)),
+                          SizedBox(width: 10),
+                          Text('Identificando estabelecimento...',
+                              style: TextStyle(
+                                  color: Colors.white54, fontSize: 12)),
+                        ]),
+                  )
+                : _nomeDetectado != null
+                    ? Container(
+                        key: const ValueKey('found'),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0A1628).withOpacity(0.97),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                              color: const Color(0xFF4CAF50).withOpacity(0.6)),
+                          boxShadow: const [
+                            BoxShadow(color: Colors.black38, blurRadius: 8)
+                          ],
+                        ),
+                        child: Row(children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4CAF50).withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                  color: const Color(0xFF4CAF50)
+                                      .withOpacity(0.4)),
+                            ),
+                            child: const Icon(Icons.store,
+                                color: Color(0xFF4CAF50), size: 20),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                              child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                const Text('Estabelecimento detectado:',
+                                    style: TextStyle(
+                                        color: Color(0xFF4CAF50),
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold)),
+                                Text(_nomeDetectado!,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14)),
+                                if (_enderecoDetectado != null)
+                                  Text(_enderecoDetectado!,
+                                      style: const TextStyle(
+                                          color: Colors.white54,
+                                          fontSize: 11),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis),
+                              ])),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.check_circle,
+                              color: Color(0xFF4CAF50), size: 22),
+                        ]),
+                      )
+                    : const SizedBox.shrink(key: ValueKey('empty')),
+          ),
+        ),
+
         // Botão minha localização
         Positioned(
           bottom: 24,
@@ -548,7 +721,8 @@ class _MapaPickerState extends State<_MapaPicker> {
             backgroundColor: const Color(0xFF0A1628),
             elevation: 4,
             onPressed: _irParaMinhaLocalizacao,
-            child: const Icon(Icons.my_location, color: Color(0xFF4CAF50)),
+            child:
+                const Icon(Icons.my_location, color: Color(0xFF4CAF50)),
           ),
         ),
       ]),
