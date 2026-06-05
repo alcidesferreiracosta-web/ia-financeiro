@@ -291,7 +291,43 @@ class _CadastrarPromocaoPageState extends State<CadastrarPromocaoPage> {
             const SizedBox(height: 16),
 
             // Local no mapa
-            _Label('Local no mapa (toque para ajustar)'),
+            _Label('Local no mapa'),
+            const SizedBox(height: 8),
+            // Botão usar localização atual
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final pos = await GpsEconomiaService.instance
+                      .getCurrentPosition();
+                  if (pos != null && mounted) {
+                    setState(() => _localSelecionado =
+                        LatLng(pos.latitude, pos.longitude));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Localização atual marcada no mapa!'),
+                      backgroundColor: Color(0xFF4CAF50),
+                      duration: Duration(seconds: 2),
+                    ));
+                  } else if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                      content: Text('Não foi possível obter a localização'),
+                      backgroundColor: Colors.orange,
+                    ));
+                  }
+                },
+                icon: const Icon(Icons.my_location,
+                    color: Color(0xFF4CAF50), size: 18),
+                label: const Text('Usar minha localização atual',
+                    style: TextStyle(color: Color(0xFF4CAF50))),
+                style: OutlinedButton.styleFrom(
+                  side:
+                      const BorderSide(color: Color(0xFF4CAF50), width: 1.2),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () => setState(() => _escolhendoLocal = true),
@@ -421,11 +457,21 @@ class _MapaPicker extends StatefulWidget {
 
 class _MapaPickerState extends State<_MapaPicker> {
   late LatLng _selected;
+  final _mapController = MapController();
 
   @override
   void initState() {
     super.initState();
     _selected = widget.initialPos;
+  }
+
+  Future<void> _irParaMinhaLocalizacao() async {
+    final pos = await GpsEconomiaService.instance.getCurrentPosition();
+    if (pos != null && mounted) {
+      final ll = LatLng(pos.latitude, pos.longitude);
+      setState(() => _selected = ll);
+      _mapController.move(ll, 17);
+    }
   }
 
   @override
@@ -450,6 +496,7 @@ class _MapaPickerState extends State<_MapaPicker> {
       ),
       body: Stack(children: [
         FlutterMap(
+          mapController: _mapController,
           options: MapOptions(
             initialCenter: _selected,
             initialZoom: 16,
@@ -466,9 +513,9 @@ class _MapaPickerState extends State<_MapaPicker> {
                 point: _selected,
                 width: 48,
                 height: 56,
-                child: Column(
+                child: const Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
+                    children: [
                       Icon(Icons.location_on,
                           color: Color(0xFF4CAF50), size: 48),
                     ]),
@@ -491,6 +538,17 @@ class _MapaPickerState extends State<_MapaPicker> {
               style: TextStyle(color: Colors.white70, fontSize: 13),
               textAlign: TextAlign.center,
             ),
+          ),
+        ),
+        // Botão minha localização
+        Positioned(
+          bottom: 24,
+          right: 16,
+          child: FloatingActionButton(
+            backgroundColor: const Color(0xFF0A1628),
+            elevation: 4,
+            onPressed: _irParaMinhaLocalizacao,
+            child: const Icon(Icons.my_location, color: Color(0xFF4CAF50)),
           ),
         ),
       ]),

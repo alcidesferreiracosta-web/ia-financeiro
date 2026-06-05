@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart' hide Path;
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart' hide Path;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -102,6 +104,22 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
   }
 
   Future<void> _initLocation() async {
+    final perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.denied) {
+      if (!mounted) return;
+      final aceito = await _mostrarDialogPermissao(false);
+      if (!aceito) {
+        if (mounted) setState(() => _carregando = false);
+        return;
+      }
+    } else if (perm == LocationPermission.deniedForever) {
+      if (!mounted) return;
+      final aceito = await _mostrarDialogPermissao(true);
+      if (mounted) setState(() => _carregando = false);
+      if (aceito) await Geolocator.openAppSettings();
+      return;
+    }
+
     final pos = await GpsEconomiaService.instance.getCurrentPosition();
     if (mounted) {
       setState(() {
@@ -122,6 +140,78 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
             LatLng(pos.latitude, pos.longitude), _mapController.camera.zoom);
       }
     });
+  }
+
+  Future<bool> _mostrarDialogPermissao(bool permanente) async {
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => AlertDialog(
+            backgroundColor: const Color(0xFF0A1628),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20)),
+            title: Row(children: const [
+              Icon(Icons.location_on, color: Color(0xFF4CAF50), size: 28),
+              SizedBox(width: 10),
+              Text('Precisamos da sua localização',
+                  style: TextStyle(color: Colors.white, fontSize: 16)),
+            ]),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'O GPS de Economia usa sua localização para:',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                _PermissaoItem(
+                    Icons.map_rounded, 'Mostrar promoções perto de você'),
+                _PermissaoItem(
+                    Icons.navigation_rounded, 'Calcular rotas até as ofertas'),
+                _PermissaoItem(
+                    Icons.add_location_alt, 'Marcar onde estão as promoções'),
+                if (permanente) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      border:
+                          Border.all(color: Colors.orange.withOpacity(0.4)),
+                    ),
+                    child: const Text(
+                      'Permissão bloqueada. Você será redirecionado para as configurações do app para habilitá-la.',
+                      style: TextStyle(color: Colors.orange, fontSize: 12),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Agora não',
+                    style: TextStyle(color: Colors.white38)),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF4CAF50),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
+                child: Text(
+                  permanente ? 'Abrir configurações' : 'Permitir localização',
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   void _updateStream() {
@@ -158,6 +248,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
   }
 
   void _escolherApp(PromoModel p) {
+    Navigator.pop(context); // fecha o bottom sheet de detalhe
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -177,12 +268,62 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                     color: Colors.white24,
                     borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 16),
-            const Text('Abrir rota com',
+            const Text('Como deseja ir até lá?',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 17,
                     fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
+            // GPS no próprio app — botão destaque
+            GestureDetector(
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => _NavegacaoPage(destino: p)),
+                );
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF1565C0), Color(0xFF0D47A1)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                        color: const Color(0xFF1565C0).withOpacity(0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4))
+                  ],
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.navigation_rounded,
+                        color: Colors.white, size: 26),
+                    SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Navegar no App',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold)),
+                        Text('GPS com rota calculada',
+                            style: TextStyle(
+                                color: Colors.white70, fontSize: 11)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
             Row(children: [
               Expanded(
                   child: _RotaBtn(
@@ -1054,6 +1195,367 @@ class _RotaBtn extends StatelessWidget {
                   color: color, fontWeight: FontWeight.bold, fontSize: 13)),
         ]),
       ),
+    );
+  }
+}
+
+class _PermissaoItem extends StatelessWidget {
+  final IconData icon;
+  final String texto;
+  const _PermissaoItem(this.icon, this.texto);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(children: [
+        Icon(icon, color: const Color(0xFF4CAF50), size: 18),
+        const SizedBox(width: 8),
+        Flexible(
+            child: Text(texto,
+                style: const TextStyle(color: Colors.white70, fontSize: 13))),
+      ]),
+    );
+  }
+}
+
+// ── Página de Navegação GPS ──────────────────────────────────────────────────
+
+class _NavegacaoPage extends StatefulWidget {
+  final PromoModel destino;
+  const _NavegacaoPage({required this.destino});
+
+  @override
+  State<_NavegacaoPage> createState() => _NavegacaoPageState();
+}
+
+class _NavegacaoPageState extends State<_NavegacaoPage> {
+  final _mapController = MapController();
+  Position? _userPos;
+  List<LatLng> _rotaPontos = [];
+  double? _distanciaKm;
+  int? _duracaoMin;
+  bool _carregando = true;
+  StreamSubscription<Position>? _posSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _iniciar();
+  }
+
+  @override
+  void dispose() {
+    _posSub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _iniciar() async {
+    final pos = await GpsEconomiaService.instance.getCurrentPosition();
+    if (!mounted) return;
+    setState(() => _userPos = pos);
+    if (pos != null) {
+      await _calcularRota(pos);
+      _mapController.move(LatLng(pos.latitude, pos.longitude), 14);
+    } else {
+      setState(() => _carregando = false);
+    }
+
+    _posSub = GpsEconomiaService.instance.positionStream().listen((pos) {
+      if (!mounted) return;
+      setState(() => _userPos = pos);
+    });
+  }
+
+  Future<void> _calcularRota(Position origem) async {
+    if (!mounted) return;
+    setState(() => _carregando = true);
+    try {
+      final url = Uri.parse(
+          'https://router.project-osrm.org/route/v1/driving/'
+          '${origem.longitude},${origem.latitude};'
+          '${widget.destino.lng},${widget.destino.lat}'
+          '?overview=full&geometries=geojson');
+      final resp =
+          await http.get(url).timeout(const Duration(seconds: 12));
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body);
+        if (data['code'] == 'Ok') {
+          final route = data['routes'][0];
+          final coords =
+              (route['geometry']['coordinates'] as List)
+                  .map((c) => LatLng(
+                      (c[1] as num).toDouble(), (c[0] as num).toDouble()))
+                  .toList();
+          final distM = (route['distance'] as num).toDouble();
+          final durS = (route['duration'] as num).toDouble();
+          if (mounted) {
+            setState(() {
+              _rotaPontos = coords;
+              _distanciaKm = distM / 1000;
+              _duracaoMin = (durS / 60).round();
+              _carregando = false;
+            });
+            if (coords.length >= 2) {
+              final bounds = LatLngBounds.fromPoints(coords);
+              _mapController.fitCamera(
+                CameraFit.bounds(
+                    bounds: bounds,
+                    padding: const EdgeInsets.fromLTRB(40, 100, 40, 160)),
+              );
+            }
+          }
+          return;
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() => _carregando = false);
+  }
+
+  String _formatDist() {
+    if (_distanciaKm == null) return '';
+    return _distanciaKm! < 1
+        ? '${(_distanciaKm! * 1000).round()} m'
+        : '${_distanciaKm!.toStringAsFixed(1)} km';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dest = widget.destino;
+    return Scaffold(
+      backgroundColor: const Color(0xFF0D1B2A),
+      body: Stack(children: [
+        // ── Mapa ─────────────────────────────────────────────
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: LatLng(dest.lat, dest.lng),
+            initialZoom: 14,
+          ),
+          children: [
+            TileLayer(
+              urlTemplate:
+                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.ia_financeiro',
+              maxNativeZoom: 19,
+            ),
+            if (_rotaPontos.isNotEmpty)
+              PolylineLayer(polylines: [
+                Polyline(
+                  points: _rotaPontos,
+                  strokeWidth: 6,
+                  color: const Color(0xFF1565C0),
+                  borderStrokeWidth: 2,
+                  borderColor: Colors.white.withOpacity(0.3),
+                ),
+              ]),
+            MarkerLayer(markers: [
+              // Destino
+              Marker(
+                point: LatLng(dest.lat, dest.lng),
+                width: 52,
+                height: 64,
+                child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: categoriaColor(dest.categoria),
+                          shape: BoxShape.circle,
+                          border:
+                              Border.all(color: Colors.white, width: 2.5),
+                          boxShadow: [
+                            BoxShadow(
+                                color: categoriaColor(dest.categoria)
+                                    .withOpacity(0.5),
+                                blurRadius: 8)
+                          ],
+                        ),
+                        child: Icon(categoriaIcon(dest.categoria),
+                            color: Colors.white, size: 20),
+                      ),
+                      CustomPaint(
+                        size: const Size(12, 8),
+                        painter: _TrianglePainter(
+                            categoriaColor(dest.categoria)),
+                      ),
+                    ]),
+              ),
+              // Usuário
+              if (_userPos != null)
+                Marker(
+                  point:
+                      LatLng(_userPos!.latitude, _userPos!.longitude),
+                  width: 48,
+                  height: 48,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1565C0),
+                      shape: BoxShape.circle,
+                      border:
+                          Border.all(color: Colors.white, width: 3),
+                      boxShadow: const [
+                        BoxShadow(
+                            color: Colors.black38, blurRadius: 8)
+                      ],
+                    ),
+                    child: const Icon(Icons.navigation,
+                        color: Colors.white, size: 22),
+                  ),
+                ),
+            ]),
+          ],
+        ),
+
+        // ── Header ───────────────────────────────────────────
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0A1628).withOpacity(0.92),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back,
+                      color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color:
+                        const Color(0xFF0A1628).withOpacity(0.95),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                        color: const Color(0xFF1565C0)
+                            .withOpacity(0.4)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(dest.nomeEstabelecimento,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      Text(dest.endereco,
+                          style: const TextStyle(
+                              color: Colors.white54, fontSize: 11),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
+                      if (_distanciaKm != null)
+                        Text(
+                          '${_formatDist()} · ~${_duracaoMin} min de carro',
+                          style: const TextStyle(
+                              color: Color(0xFF4CAF50),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600),
+                        )
+                      else if (_carregando)
+                        const Text('Calculando rota...',
+                            style: TextStyle(
+                                color: Colors.white54, fontSize: 12)),
+                    ],
+                  ),
+                ),
+              ),
+            ]),
+          ),
+        ),
+
+        // ── Barra inferior ────────────────────────────────────
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: EdgeInsets.fromLTRB(
+                16,
+                14,
+                16,
+                MediaQuery.of(context).padding.bottom + 14),
+            decoration: const BoxDecoration(
+              color: Color(0xFF0A1628),
+              borderRadius:
+                  BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: Row(children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _userPos == null || _carregando
+                      ? null
+                      : () => _calcularRota(_userPos!),
+                  icon: _carregando
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : const Icon(Icons.refresh, color: Colors.white),
+                  label: Text(
+                      _carregando ? 'Calculando...' : 'Recalcular',
+                      style: const TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1565C0),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final url = Uri.parse(
+                        'https://www.google.com/maps/dir/?api=1'
+                        '&destination=${dest.lat},${dest.lng}'
+                        '&travelmode=driving');
+                    await launchUrl(url,
+                        mode: LaunchMode.externalApplication);
+                  },
+                  icon: const Icon(Icons.open_in_new,
+                      color: Colors.white),
+                  label: const Text('Abrir Maps',
+                      style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4285F4),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                ),
+              ),
+            ]),
+          ),
+        ),
+
+        // Loading overlay
+        if (_carregando && _rotaPontos.isEmpty)
+          Container(
+            color: Colors.black38,
+            child: const Center(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                CircularProgressIndicator(color: Color(0xFF4CAF50)),
+                SizedBox(height: 12),
+                Text('Calculando rota...',
+                    style: TextStyle(
+                        color: Colors.white, fontSize: 15)),
+              ]),
+            ),
+          ),
+      ]),
     );
   }
 }
