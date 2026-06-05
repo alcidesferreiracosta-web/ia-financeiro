@@ -11,6 +11,7 @@ import 'dicas_ia_page.dart';
 import 'investimentos_page.dart';
 import 'planejamento_page.dart';
 import 'renda_extra_page.dart';
+import '../services/gps_economia_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -400,6 +401,10 @@ class _HomePageState extends State<HomePage> {
                         largo: true,
                         onTap: () => _ir(const RendaExtraPage()),
                       ),
+
+                      const SizedBox(height: 12),
+
+                      const _EconomiaGeradaCard(),
                     ],
                   ),
                 );
@@ -459,6 +464,91 @@ class _AcaoBtn extends StatelessWidget {
     );
   }
 }
+
+// ── Economia Gerada pelo GPS ──────────────────────────────────────────────────
+
+class _EconomiaGeradaCard extends StatefulWidget {
+  const _EconomiaGeradaCard();
+
+  @override
+  State<_EconomiaGeradaCard> createState() => _EconomiaGeradaCardState();
+}
+
+class _EconomiaGeradaCardState extends State<_EconomiaGeradaCard> {
+  Map<String, dynamic> _economia = {};
+  bool _carregando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    GpsEconomiaService.instance.getEconomiaTotal().then((data) {
+      if (mounted) setState(() { _economia = data; _carregando = false; });
+    });
+  }
+
+  String _fmt(double v) => 'R\$ ${v.toStringAsFixed(2).replaceAll('.', ',')}';
+
+  @override
+  Widget build(BuildContext context) {
+    if (_carregando) return const SizedBox.shrink();
+    if (_economia.isEmpty) return const SizedBox.shrink();
+
+    final total = _economia.values
+        .fold(0.0, (s, v) => s + ((v as num?)?.toDouble() ?? 0));
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1B5E20).withOpacity(0.25),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.4)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Row(children: [
+          Icon(Icons.savings, color: Color(0xFF4CAF50), size: 18),
+          SizedBox(width: 8),
+          Text('Economia Gerada',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14)),
+        ]),
+        const SizedBox(height: 10),
+        ..._economia.entries.map((e) {
+          final val = (e.value as num?)?.toDouble() ?? 0;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(children: [
+              Expanded(
+                child: Text('Você economizou em ${e.key}',
+                    style: const TextStyle(
+                        color: Colors.white70, fontSize: 12)),
+              ),
+              Text(_fmt(val),
+                  style: const TextStyle(
+                      color: Color(0xFF66BB6A),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13)),
+            ]),
+          );
+        }),
+        const Divider(color: Colors.white12, height: 16),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          const Text('Total economizado este mês',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          Text(_fmt(total),
+              style: const TextStyle(
+                  color: Color(0xFF4CAF50),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16)),
+        ]),
+      ]),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _NavBtn extends StatelessWidget {
   final String label;

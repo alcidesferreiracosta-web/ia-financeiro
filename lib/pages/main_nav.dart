@@ -3,6 +3,7 @@ import 'home_page.dart';
 import 'ofertas_page.dart';
 import 'assistente_page.dart';
 import 'score_page.dart';
+import 'gps_economia_page.dart';
 
 class MainNav extends StatefulWidget {
   const MainNav({super.key});
@@ -20,6 +21,7 @@ class _MainNavState extends State<MainNav> {
         index: _idx,
         children: const [
           HomePage(),
+          GpsEconomiaPage(),
           OfertasPage(),
           AssistentePage(),
           ScorePage(),
@@ -33,16 +35,21 @@ class _MainNavState extends State<MainNav> {
           currentIndex: _idx,
           onTap: (i) => setState(() => _idx = i),
           backgroundColor: const Color(0xFF0A1628),
-          selectedItemColor: Colors.orange,
+          selectedItemColor: const Color(0xFF4CAF50),
           unselectedItemColor: Colors.white38,
           type: BottomNavigationBarType.fixed,
-          selectedFontSize: 11,
-          unselectedFontSize: 10,
+          selectedFontSize: 10,
+          unselectedFontSize: 9,
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
               activeIcon: Icon(Icons.home),
               label: 'Início',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.location_on_outlined),
+              activeIcon: Icon(Icons.location_on),
+              label: 'GPS',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.local_offer_outlined),
