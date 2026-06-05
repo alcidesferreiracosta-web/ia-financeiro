@@ -1,4 +1,4 @@
-name: Build APK
+name: Build AAB (Play Store)
 
 on:
   push:
@@ -26,23 +26,12 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
-        run: flutter build apk --release --no-shrink
+      - name: Build AAB
+        run: flutter build appbundle --release
 
-      - name: Print keystore SHA1 (para adicionar no Firebase Console)
-        run: |
-          APK=build/app/outputs/flutter-apk/app-release.apk
-          echo "=== SHA do certificado do APK ==="
-          keytool -printcert -jarfile "$APK" 2>&1 | grep -E "SHA1|SHA256"
-          echo "=== Debug keystore (fallback) ==="
-          keytool -list -v \
-            -keystore ~/.android/debug.keystore \
-            -alias androiddebugkey \
-            -storepass android -keypass android 2>&1 | grep -E "SHA1|SHA256" || echo "debug.keystore nao encontrado"
-
-      - name: Upload APK
+      - name: Upload AAB
         uses: actions/upload-artifact@v4
         with:
-          name: ia-financeiro-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: ia-financeiro-aab
+          path: build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
