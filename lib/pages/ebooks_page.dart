@@ -4,19 +4,19 @@ import 'package:url_launcher/url_launcher.dart';
 class EbooksPage extends StatelessWidget {
   const EbooksPage({super.key});
 
-  static const kits = [
+  static const kitsJornada = [
     {
       'titulo': 'Kit Starter',
-      'subtitulo': '3 eBooks essenciais',
+      'subtitulo': '3 eBooks — Passo 1',
       'preco': 'R\$ 67',
       'de': 'De R\$ 113,70',
       'badge': 'POPULAR',
-      'url': 'https://pay.kiwify.com.br/6lm6lih',
+      'url': 'https://pay.kiwify.com.br/6lm6Iih',
       'cor': Color(0xFF1A237E),
     },
     {
       'titulo': 'Kit Acelerador',
-      'subtitulo': '9 eBooks completos',
+      'subtitulo': '9 eBooks — Passos 1, 2 e 3',
       'preco': 'R\$ 147',
       'de': 'De R\$ 341,10',
       'badge': 'MAIS VENDIDO',
@@ -34,28 +34,67 @@ class EbooksPage extends StatelessWidget {
     },
   ];
 
+  static const kitsTematicos = [
+    {
+      'titulo': 'Kit Finanças Pessoais',
+      'subtitulo': '3 eBooks de finanças',
+      'preco': 'R\$ 67',
+      'de': 'De R\$ 103,70',
+      'badge': 'FINANÇAS',
+      'url': 'https://pay.kiwify.com.br/t5mj2Et',
+      'cor': Color(0xFF00695C),
+    },
+    {
+      'titulo': 'Kit Marketing Digital',
+      'subtitulo': '3 eBooks de marketing',
+      'preco': 'R\$ 67',
+      'de': 'De R\$ 113,70',
+      'badge': 'MARKETING',
+      'url': 'https://pay.kiwify.com.br/V5nVOCd',
+      'cor': Color(0xFF4A148C),
+    },
+    {
+      'titulo': 'Kit Renda Extra',
+      'subtitulo': '3 eBooks de renda extra',
+      'preco': 'R\$ 67',
+      'de': 'De R\$ 123,70',
+      'badge': 'RENDA EXTRA',
+      'url': 'https://pay.kiwify.com.br/oUsY51z',
+      'cor': Color(0xFF2E7D32),
+    },
+    {
+      'titulo': 'Kit Investimentos',
+      'subtitulo': '3 eBooks de investimentos',
+      'preco': 'R\$ 97',
+      'de': 'De R\$ 133,70',
+      'badge': 'INVESTIMENTOS',
+      'url': 'https://pay.kiwify.com.br/RUOaYx7',
+      'cor': Color(0xFF1B5E20),
+    },
+  ];
+
   static const ebooks = [
     {
       'n': '01',
-      'titulo': 'Copywriting com IA',
+      'titulo': 'Copywriting com IA para Iniciantes',
       'preco': 'R\$ 37,90',
       'url': 'https://pay.kiwify.com.br/Z1ZLyxD',
       'emoji': '✍️',
       'cor': Color(0xFF1565C0),
-      'desc': 'Crie textos de vendas irresistíveis usando inteligência artificial',
+      'desc': 'Escreva textos que vendem usando IA e multiplique suas conversões',
     },
     {
       'n': '02',
-      'titulo': 'Instagram & TikTok com IA',
+      'titulo': 'Instagram e TikTok para Vender Mais',
       'preco': 'R\$ 37,90',
       'url': 'https://pay.kiwify.com.br/5cC2Gso',
       'emoji': '📱',
       'cor': Color(0xFFAD1457),
-      'desc': 'Estratégias para explodir seus seguidores e vendas nas redes sociais',
+      'desc': 'Estratégias para explodir seguidores e vendas nas redes sociais',
     },
     {
       'n': '03',
-      'titulo': 'Renda Passiva com IA',
+      'titulo': 'Renda Passiva com Produtos Digitais',
       'preco': 'R\$ 37,90',
       'url': 'https://pay.kiwify.com.br/2XHrfps',
       'emoji': '💰',
@@ -64,7 +103,7 @@ class EbooksPage extends StatelessWidget {
     },
     {
       'n': '04',
-      'titulo': 'Planejamento 30 Dias',
+      'titulo': 'Planejamento Financeiro em 30 Dias',
       'preco': 'R\$ 27,90',
       'url': 'https://pay.kiwify.com.br/ZDsTaF1',
       'emoji': '📅',
@@ -73,7 +112,7 @@ class EbooksPage extends StatelessWidget {
     },
     {
       'n': '05',
-      'titulo': 'Criar Infoprodutos com IA',
+      'titulo': 'Como Criar e Vender Infoprodutos',
       'preco': 'R\$ 37,90',
       'url': 'https://pay.kiwify.com.br/K4ImSkf',
       'emoji': '🚀',
@@ -82,25 +121,25 @@ class EbooksPage extends StatelessWidget {
     },
     {
       'n': '06',
-      'titulo': 'Finanças com IA',
+      'titulo': 'Finanças com IA: O Guia Definitivo',
       'preco': 'R\$ 37,90',
       'url': 'https://pay.kiwify.com.br/NZPtsP4',
       'emoji': '📊',
       'cor': Color(0xFF1A237E),
-      'desc': 'Use IA para tomar decisões financeiras mais inteligentes no dia a dia',
+      'desc': 'Organize, economize e crie renda extra com IA em 30 dias',
     },
     {
       'n': '07',
-      'titulo': 'Renda Extra — 50 Formas',
+      'titulo': 'Renda Extra com IA: 50 Formas',
       'preco': 'R\$ 47,90',
       'url': 'https://pay.kiwify.com.br/dXcT1bp',
       'emoji': '💡',
       'cor': Color(0xFFE65100),
-      'desc': '50 formas testadas e aprovadas de ganhar dinheiro extra no Brasil',
+      'desc': '50 formas comprovadas de ganhar dinheiro extra com IA em 2026',
     },
     {
       'n': '08',
-      'titulo': 'Investimentos com IA',
+      'titulo': 'Investimentos com IA: Do Zero ao 1º Milhão',
       'preco': 'R\$ 57,90',
       'url': 'https://pay.kiwify.com.br/2kyii2i',
       'emoji': '📈',
@@ -114,16 +153,16 @@ class EbooksPage extends StatelessWidget {
       'url': 'https://pay.kiwify.com.br/6Ng1b7X',
       'emoji': '🔓',
       'cor': Color(0xFFB71C1C),
-      'desc': 'Estratégia passo a passo para sair das dívidas de uma vez por todas',
+      'desc': 'Método comprovado para eliminar dívidas e conquistar liberdade financeira',
     },
     {
       'n': '10',
-      'titulo': 'Guia Renda Extra no Brasil',
+      'titulo': 'Guia Completo de Renda Extra no Brasil',
       'preco': 'R\$ 37,90',
       'url': 'https://pay.kiwify.com.br/CAQ8GUK',
       'emoji': '🇧🇷',
       'cor': Color(0xFF2E7D32),
-      'desc': 'Guia completo de oportunidades de renda extra para brasileiros',
+      'desc': '15 formas comprovadas de ganhar dinheiro extra no Brasil',
     },
     {
       'n': '11',
@@ -132,7 +171,7 @@ class EbooksPage extends StatelessWidget {
       'url': 'https://pay.kiwify.com.br/qvt30BI',
       'emoji': '🎯',
       'cor': Color(0xFF4A148C),
-      'desc': 'Domine o marketing digital e atraia clientes usando IA',
+      'desc': 'Guia definitivo para empreendedores dominarem o marketing com IA',
     },
     {
       'n': '12',
@@ -194,15 +233,27 @@ class EbooksPage extends StatelessWidget {
 
           const SizedBox(height: 22),
 
-          // Kits
-          const Text('🔥 Kits — Melhor Custo-Benefício',
+          // Kits Jornada
+          const Text('🔥 Kits Jornada — Melhor Custo-Benefício',
               style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
           const SizedBox(height: 2),
-          const Text('Economize comprando em conjunto',
+          const Text('Economize comprando a coleção completa',
               style: TextStyle(color: Colors.white38, fontSize: 12)),
           const SizedBox(height: 12),
 
-          ...kits.map((kit) => _KitCard(kit: kit, onTap: () => _abrir(kit['url'] as String))),
+          ...kitsJornada.map((kit) => _KitCard(kit: kit, onTap: () => _abrir(kit['url'] as String))),
+
+          const SizedBox(height: 20),
+
+          // Kits Temáticos
+          const Text('🎯 Kits Temáticos',
+              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 2),
+          const Text('Aprofunde em uma área específica',
+              style: TextStyle(color: Colors.white38, fontSize: 12)),
+          const SizedBox(height: 12),
+
+          ...kitsTematicos.map((kit) => _KitCard(kit: kit, onTap: () => _abrir(kit['url'] as String))),
 
           const SizedBox(height: 24),
           const Divider(color: Colors.white12),
