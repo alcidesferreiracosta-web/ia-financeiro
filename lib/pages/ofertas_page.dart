@@ -173,6 +173,7 @@ class _OfertasFirestore extends StatelessWidget {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance.collection('ofertas').where('ativo', isEqualTo: true).snapshots(),
       builder: (ctx, ofSnap) {
+        if (ofSnap.hasError) return const Center(child: Text('Não foi possível carregar as ofertas.'));
         if (!ofSnap.hasData) return const Center(child: CircularProgressIndicator(color: Colors.orange));
 
         final todos = List.of(ofSnap.data!.docs);
@@ -205,12 +206,11 @@ class _OfertasFirestore extends StatelessWidget {
             _KiwifyKitsSection(onAbrir: onAbrir),
             const SizedBox(height: 18),
 
-            if (ebooks.isNotEmpty) ...[
-              const _SecaoHeader(titulo: '📘 Aprenda e Ganhe Mais', subtitulo: 'Conteúdo que transforma sua vida financeira'),
-              const SizedBox(height: 10),
-              ...ebooks.map((doc) => _EbookCard(doc: doc, onAbrir: onAbrir)),
-              const SizedBox(height: 18),
-            ],
+            // ── 12 eBooks individuais ─────────────────────────
+            const _SecaoHeader(titulo: '📘 12 eBooks Individuais', subtitulo: 'Escolha o que mais combina com você'),
+            const SizedBox(height: 10),
+            _EbooksIndividuaisSection(onAbrir: onAbrir),
+            const SizedBox(height: 18),
             if (produtos.isNotEmpty) ...[
               const _SecaoHeader(titulo: '🏆 Ranking de Promoções', subtitulo: 'IA avalia se vale a pena pra você'),
               const SizedBox(height: 10),
@@ -427,6 +427,60 @@ class _KiwifyKitsSection extends StatelessWidget {
         ),
       ),
     ]);
+  }
+}
+
+// ─── Seção 12 eBooks Individuais (hardcoded) ─────────────────────────────────
+class _EbooksIndividuaisSection extends StatelessWidget {
+  final void Function(String) onAbrir;
+  const _EbooksIndividuaisSection({required this.onAbrir});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: EbooksPage.ebooks.map((ebook) {
+        final cor = ebook['cor'] as Color;
+        return GestureDetector(
+          onTap: () => onAbrir(ebook['url'] as String),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: cor.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cor.withOpacity(0.35)),
+            ),
+            child: Row(children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(color: cor, borderRadius: BorderRadius.circular(10)),
+                child: Center(child: Text(ebook['emoji'] as String, style: const TextStyle(fontSize: 22))),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(ebook['titulo'] as String,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                const SizedBox(height: 2),
+                Text(ebook['desc'] as String,
+                    style: const TextStyle(color: Colors.white54, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ])),
+              const SizedBox(width: 10),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text(ebook['preco'] as String,
+                    style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 14)),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(8)),
+                  child: const Text('Comprar', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ]),
+            ]),
+          ),
+        );
+      }).toList(),
+    );
   }
 }
 

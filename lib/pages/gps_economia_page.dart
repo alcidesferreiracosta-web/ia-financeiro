@@ -609,7 +609,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
               children: [
                 TileLayer(
                   urlTemplate:
-                      'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                      'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.ia_financeiro',
                   maxNativeZoom: 19,
                 ),
@@ -619,9 +619,9 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                         _userPos!.latitude, _userPos!.longitude),
                     radius: _raioKm * 1000,
                     useRadiusInMeter: true,
-                    color: const Color(0xFF00E676).withOpacity(0.07),
+                    color: const Color(0xFF2979FF).withOpacity(0.08),
                     borderColor:
-                        const Color(0xFF00E676).withOpacity(0.45),
+                        const Color(0xFF2979FF).withOpacity(0.4),
                     borderStrokeWidth: 1.8,
                   ),
                 ]),
@@ -686,16 +686,16 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                     horizontal: 14, vertical: 11),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF0D2137), Color(0xFF0A3020)],
+                    colors: [Color(0xFF0D2137), Color(0xFF0D2550)],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
                   ),
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                      color: const Color(0xFF00E676).withOpacity(0.4)),
+                      color: const Color(0xFF2979FF).withOpacity(0.4)),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF00E676).withOpacity(0.12),
+                      color: const Color(0xFF2979FF).withOpacity(0.12),
                       blurRadius: 18,
                       spreadRadius: -2,
                     ),
@@ -707,10 +707,10 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF00E676).withOpacity(0.15),
+                      color: const Color(0xFF2979FF).withOpacity(0.15),
                       shape: BoxShape.circle,
                       border: Border.all(
-                          color: const Color(0xFF00E676).withOpacity(0.5),
+                          color: const Color(0xFF2979FF).withOpacity(0.5),
                           width: 1.5),
                     ),
                     child: const Icon(Icons.savings_rounded,
@@ -740,7 +740,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                     builder: (_, s) {
                       final count = s.data?.length ?? 0;
                       return _Badge(
-                          '$count promos', const Color(0xFF00E676));
+                          '$count promos', const Color(0xFF2979FF));
                     },
                   ),
                   const SizedBox(width: 8),
@@ -892,14 +892,14 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                     horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF0A3020), Color(0xFF0D2137)],
+                    colors: [Color(0xFF0D2550), Color(0xFF0D2137)],
                   ),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                      color: const Color(0xFF00E676).withOpacity(0.45)),
+                      color: const Color(0xFF2979FF).withOpacity(0.45)),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF00E676).withOpacity(0.2),
+                      color: const Color(0xFF2979FF).withOpacity(0.2),
                       blurRadius: 14,
                     ),
                     const BoxShadow(color: Colors.black45, blurRadius: 6),
@@ -1028,7 +1028,7 @@ class _UserMarkerState extends State<_UserMarker>
                 height: 56,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Color(0x4000E676),
+                  color: Color(0x402979FF),
                 ),
               ),
             ),
@@ -1039,9 +1039,9 @@ class _UserMarkerState extends State<_UserMarker>
             height: 30,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFF00E676).withOpacity(0.12),
+              color: const Color(0xFF2979FF).withOpacity(0.12),
               border: Border.all(
-                  color: const Color(0xFF00E676).withOpacity(0.4),
+                  color: const Color(0xFF2979FF).withOpacity(0.4),
                   width: 1),
             ),
           ),
@@ -1050,12 +1050,12 @@ class _UserMarkerState extends State<_UserMarker>
             width: 18,
             height: 18,
             decoration: BoxDecoration(
-              color: const Color(0xFF00E676),
+              color: const Color(0xFF2979FF),
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 2.5),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF00E676).withOpacity(0.7),
+                  color: const Color(0xFF2979FF).withOpacity(0.7),
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),
@@ -1834,7 +1834,7 @@ class _NavegacaoPageState extends State<_NavegacaoPage> {
           children: [
             TileLayer(
               urlTemplate:
-                  'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+                  'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.ia_financeiro',
               maxNativeZoom: 19,
             ),
