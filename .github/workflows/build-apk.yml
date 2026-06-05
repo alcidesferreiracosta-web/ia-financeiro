@@ -26,6 +26,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Print keystore SHA1 (para adicionar no Firebase Console)
+        run: |
+          keytool -list -v \
+            -keystore ~/.android/debug.keystore \
+            -alias androiddebugkey \
+            -storepass android -keypass android 2>&1 | grep -E "SHA1|SHA256"
+
       - name: Build APK
         run: flutter build apk --release --no-shrink
 
