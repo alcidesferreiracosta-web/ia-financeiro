@@ -61,7 +61,6 @@ class GpsEconomiaService {
   }) {
     final delta = raioKm / 111.0;
     final deltaLng = raioKm / (111.0 * cos(lat * pi / 180));
-    final now = DateTime.now();
 
     return _db
         .collection('promocoes')
@@ -70,6 +69,7 @@ class GpsEconomiaService {
         .limit(300)
         .snapshots()
         .map((snap) {
+      final now = DateTime.now();
       return snap.docs
           .map((d) => PromoModel.fromDoc(d))
           .where((p) {

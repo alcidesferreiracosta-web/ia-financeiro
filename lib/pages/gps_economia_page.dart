@@ -609,7 +609,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
               children: [
                 TileLayer(
                   urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.ia_financeiro',
                   maxNativeZoom: 19,
                 ),
@@ -619,34 +619,21 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                         _userPos!.latitude, _userPos!.longitude),
                     radius: _raioKm * 1000,
                     useRadiusInMeter: true,
-                    color: const Color(0xFF4CAF50).withOpacity(0.07),
+                    color: const Color(0xFF00E676).withOpacity(0.07),
                     borderColor:
-                        const Color(0xFF4CAF50).withOpacity(0.35),
-                    borderStrokeWidth: 1.5,
+                        const Color(0xFF00E676).withOpacity(0.45),
+                    borderStrokeWidth: 1.8,
                   ),
                 ]),
                 MarkerLayer(
                   markers: [
-                    // Usuário
+                    // Usuário — marcador pulsante
                     Marker(
                       point: LatLng(
                           _userPos!.latitude, _userPos!.longitude),
-                      width: 48,
-                      height: 48,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1565C0),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                              color: Colors.white, width: 3),
-                          boxShadow: const [
-                            BoxShadow(
-                                color: Colors.black38, blurRadius: 8)
-                          ],
-                        ),
-                        child: const Icon(Icons.person,
-                            color: Colors.white, size: 22),
-                      ),
+                      width: 56,
+                      height: 56,
+                      child: const _UserMarker(),
                     ),
                     // Promoções
                     ...promos.map((p) => Marker(
@@ -693,43 +680,86 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(children: [
-              // Header
+              // Header — identidade GPS da Economia
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 10),
+                    horizontal: 14, vertical: 11),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0A1628).withOpacity(0.96),
-                  borderRadius: BorderRadius.circular(16),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0D2137), Color(0xFF0A3020)],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                      color: const Color(0xFF4CAF50).withOpacity(0.3)),
-                  boxShadow: const [
-                    BoxShadow(color: Colors.black26, blurRadius: 8)
+                      color: const Color(0xFF00E676).withOpacity(0.4)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00E676).withOpacity(0.12),
+                      blurRadius: 18,
+                      spreadRadius: -2,
+                    ),
+                    const BoxShadow(color: Colors.black54, blurRadius: 12),
                   ],
                 ),
                 child: Row(children: [
-                  const Icon(Icons.location_on,
-                      color: Color(0xFF4CAF50), size: 20),
-                  const SizedBox(width: 8),
-                  const Text('GPS da Economia',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16)),
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00E676).withOpacity(0.15),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                          color: const Color(0xFF00E676).withOpacity(0.5),
+                          width: 1.5),
+                    ),
+                    child: const Icon(Icons.savings_rounded,
+                        color: Color(0xFF00E676), size: 19),
+                  ),
+                  const SizedBox(width: 10),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('GPS da Economia',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              letterSpacing: 0.3)),
+                      Text('Promoções perto de você',
+                          style: TextStyle(
+                              color: Color(0xFF00E676),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  ),
                   const Spacer(),
                   StreamBuilder<List<PromoModel>>(
                     stream: _promoStream,
-                    builder: (_, s) => _Badge(
-                        '${s.data?.length ?? 0} promoções',
-                        const Color(0xFF4CAF50)),
+                    builder: (_, s) {
+                      final count = s.data?.length ?? 0;
+                      return _Badge(
+                          '$count promos', const Color(0xFF00E676));
+                    },
                   ),
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () => Navigator.push(context,
                         MaterialPageRoute(
-                            builder: (_) =>
-                                const RankingGpsPage())),
-                    child: const Icon(Icons.emoji_events,
-                        color: Color(0xFFFFD700), size: 22),
+                            builder: (_) => const RankingGpsPage())),
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFD700).withOpacity(0.12),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: const Color(0xFFFFD700).withOpacity(0.4)),
+                      ),
+                      child: const Icon(Icons.emoji_events,
+                          color: Color(0xFFFFD700), size: 19),
+                    ),
                   ),
                 ]),
               ),
@@ -843,6 +873,65 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
           ),
         ),
 
+        // ── Barra de economia disponível ────────────────────
+        Positioned(
+          bottom: 104,
+          left: 16,
+          child: StreamBuilder<List<PromoModel>>(
+            stream: _promoStream,
+            builder: (_, snap) {
+              final promos = snap.data ?? [];
+              if (promos.isEmpty) return const SizedBox.shrink();
+              final totalEco = promos.fold(0.0, (s, p) {
+                if (p.valorOriginal == null) return s;
+                final eco = p.valorOriginal! - p.valorPromo;
+                return s + (eco > 0 ? eco : 0);
+              });
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0A3020), Color(0xFF0D2137)],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                      color: const Color(0xFF00E676).withOpacity(0.45)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF00E676).withOpacity(0.2),
+                      blurRadius: 14,
+                    ),
+                    const BoxShadow(color: Colors.black45, blurRadius: 6),
+                  ],
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.local_offer_rounded,
+                      color: Color(0xFF00E676), size: 14),
+                  const SizedBox(width: 6),
+                  Text('${promos.length} promos',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold)),
+                  if (totalEco > 0) ...[
+                    const SizedBox(width: 6),
+                    Container(width: 1, height: 12, color: Colors.white24),
+                    const SizedBox(width: 6),
+                    Text(
+                      'até R\$ ${totalEco.toStringAsFixed(0)} ec.',
+                      style: const TextStyle(
+                          color: Color(0xFF00E676),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ]),
+              );
+            },
+          ),
+        ),
+
         // ── FABs ───────────────────────────────────────────
         Positioned(
           bottom: 24,
@@ -876,10 +965,11 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                           CadastrarPromocaoPage(userPos: _userPos)),
                 );
                 if (ok == true && mounted) {
+                  _updateStream();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Promoção publicada! +10 pontos'),
-                      backgroundColor: Color(0xFF4CAF50),
+                      backgroundColor: Color(0xFF00E676),
                     ),
                   );
                 }
@@ -888,6 +978,92 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
           ]),
         ),
       ]),
+    );
+  }
+}
+
+// ── Marcador do usuário — pulsante ──────────────────────────────────────────
+
+class _UserMarker extends StatefulWidget {
+  const _UserMarker();
+  @override
+  State<_UserMarker> createState() => _UserMarkerState();
+}
+
+class _UserMarkerState extends State<_UserMarker>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1800))
+      ..repeat();
+    _pulse = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (_, __) => SizedBox(
+        width: 56,
+        height: 56,
+        child: Stack(alignment: Alignment.center, children: [
+          // Anel externo pulsante
+          Transform.scale(
+            scale: 0.4 + _pulse.value * 1.0,
+            child: Opacity(
+              opacity: (1.0 - _pulse.value).clamp(0.0, 1.0),
+              child: Container(
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(0x4000E676),
+                ),
+              ),
+            ),
+          ),
+          // Anel médio fixo
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: const Color(0xFF00E676).withOpacity(0.12),
+              border: Border.all(
+                  color: const Color(0xFF00E676).withOpacity(0.4),
+                  width: 1),
+            ),
+          ),
+          // Ponto central
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              color: const Color(0xFF00E676),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2.5),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF00E676).withOpacity(0.7),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+          ),
+        ]),
+      ),
     );
   }
 }
@@ -1658,7 +1834,7 @@ class _NavegacaoPageState extends State<_NavegacaoPage> {
           children: [
             TileLayer(
               urlTemplate:
-                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.ia_financeiro',
               maxNativeZoom: 19,
             ),
@@ -1666,10 +1842,10 @@ class _NavegacaoPageState extends State<_NavegacaoPage> {
               PolylineLayer(polylines: [
                 Polyline(
                   points: _rotaPontos,
-                  strokeWidth: 6,
-                  color: const Color(0xFF1565C0),
-                  borderStrokeWidth: 2,
-                  borderColor: Colors.white.withOpacity(0.3),
+                  strokeWidth: 7,
+                  color: const Color(0xFF00B8FF),
+                  borderStrokeWidth: 2.5,
+                  borderColor: Colors.white.withOpacity(0.2),
                 ),
               ]),
             MarkerLayer(markers: [
@@ -1706,27 +1882,14 @@ class _NavegacaoPageState extends State<_NavegacaoPage> {
                       ),
                     ]),
               ),
-              // Usuário
+              // Usuário — pulsante
               if (_userPos != null)
                 Marker(
                   point:
                       LatLng(_userPos!.latitude, _userPos!.longitude),
-                  width: 48,
-                  height: 48,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1565C0),
-                      shape: BoxShape.circle,
-                      border:
-                          Border.all(color: Colors.white, width: 3),
-                      boxShadow: const [
-                        BoxShadow(
-                            color: Colors.black38, blurRadius: 8)
-                      ],
-                    ),
-                    child: const Icon(Icons.navigation,
-                        color: Colors.white, size: 22),
-                  ),
+                  width: 56,
+                  height: 56,
+                  child: const _UserMarker(),
                 ),
             ]),
           ],
