@@ -81,9 +81,63 @@ class GpsEconomiaPage extends StatefulWidget {
   State<GpsEconomiaPage> createState() => _GpsEconomiaPageState();
 }
 
+// ── Modelos auxiliares ────────────────────────────────────────────────────────
+
+class _OverpassPlace {
+  final String id;
+  final String nome;
+  final String categoria;
+  final double lat;
+  final double lng;
+
+  _OverpassPlace({required this.id, required this.nome, required this.categoria, required this.lat, required this.lng});
+
+  static String _mapCategoria(Map tags) {
+    final amenity = (tags['amenity'] as String? ?? '').toLowerCase();
+    final shop = (tags['shop'] as String? ?? '').toLowerCase();
+    if (amenity == 'supermarket' || amenity == 'convenience' ||
+        shop.contains('supermarket') || shop.contains('convenience') ||
+        shop.contains('grocery') || shop.contains('greengrocer')) return 'Mercados';
+    if (amenity == 'fuel') return 'Postos de combustível';
+    if (amenity == 'pharmacy') return 'Farmácias';
+    if (shop == 'bakery' || amenity == 'bakery') return 'Padarias';
+    if (amenity == 'restaurant') return 'Restaurantes';
+    if (amenity == 'fast_food') return 'Lanchonetes';
+    if (amenity == 'cafe') return 'Lanchonetes';
+    if (amenity == 'pizza') return 'Pizzarias';
+    return 'Outros';
+  }
+
+  factory _OverpassPlace.fromJson(Map element) {
+    final tags = element['tags'] as Map? ?? {};
+    final nome = (tags['name'] as String?)?.trim() ??
+        (tags['brand'] as String?)?.trim() ?? '';
+    final lat = (element['lat'] as num).toDouble();
+    final lng = (element['lon'] as num).toDouble();
+    return _OverpassPlace(
+      id: element['id'].toString(),
+      nome: nome,
+      categoria: _mapCategoria(tags),
+      lat: lat,
+      lng: lng,
+    );
+  }
+}
+
+class _SearchSuggestion {
+  final String nome;
+  final String subtitulo;
+  final double lat;
+  final double lng;
+  _SearchSuggestion({required this.nome, required this.subtitulo, required this.lat, required this.lng});
+}
+
+// ── Estado principal ──────────────────────────────────────────────────────────
+
 class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
   final _mapController = MapController();
   final _buscaCtrl = TextEditingController();
+  final _buscaFocus = FocusNode();
   Position? _userPos;
   double _raioKm = 5;
   String _categoriaFiltro = 'Todas';
@@ -94,6 +148,16 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
   _NavDestino? _tapDestino;
   bool _buscando = false;
 
+  // Nearby places (Overpass API)
+  List<_OverpassPlace> _nearbyPlaces = [];
+  bool _loadingPlaces = false;
+  LatLng? _lastFetchPos;
+
+  // Autocomplete
+  Timer? _debounceTimer;
+  List<_SearchSuggestion> _suggestions = [];
+  bool _showSuggestions = false;
+
   @override
   void initState() {
     super.initState();
@@ -103,7 +167,9 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
   @override
   void dispose() {
     _posSub?.cancel();
+    _debounceTimer?.cancel();
     _buscaCtrl.dispose();
+    _buscaFocus.dispose();
     super.dispose();
   }
 
@@ -131,8 +197,9 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
         _carregando = false;
       });
       if (pos != null) {
-        _mapController.move(LatLng(pos.latitude, pos.longitude), 14);
+        _mapController.move(LatLng(pos.latitude, pos.longitude), 15);
         _updateStream();
+        _fetchNearbyPlaces();
       }
     }
 
@@ -230,11 +297,106 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
     });
   }
 
+  // ── A) Busca locais próximos via Overpass API ──────────────────────────────
+
+  Future<void> _fetchNearbyPlaces() async {
+    if (_userPos == null || _loadingPlaces) return;
+    final pos = LatLng(_userPos!.latitude, _userPos!.longitude);
+    if (_lastFetchPos != null) {
+      final metros = Geolocator.distanceBetween(
+          pos.latitude, pos.longitude,
+          _lastFetchPos!.latitude, _lastFetchPos!.longitude);
+      if (metros < 500) return;
+    }
+    setState(() => _loadingPlaces = true);
+    _lastFetchPos = pos;
+    try {
+      final raioM = (_raioKm * 1000).round();
+      final lat = _userPos!.latitude;
+      final lng = _userPos!.longitude;
+      final query =
+          '[out:json][timeout:15];'
+          '('
+          'node["amenity"~"supermarket|fuel|pharmacy|restaurant|fast_food|cafe|bakery"](around:$raioM,$lat,$lng);'
+          'node["shop"~"supermarket|convenience|greengrocer|bakery|butcher|grocery"](around:$raioM,$lat,$lng);'
+          ');'
+          'out body;';
+      final url = Uri.parse('https://overpass-api.de/api/interpreter');
+      final resp = await http.post(url, body: {'data': query}).timeout(const Duration(seconds: 20));
+      if (!mounted) return;
+      if (resp.statusCode == 200) {
+        final data = jsonDecode(resp.body) as Map;
+        final elements = (data['elements'] as List? ?? []);
+        final places = elements
+            .map((e) => _OverpassPlace.fromJson(e as Map))
+            .where((p) => p.nome.isNotEmpty)
+            .toList();
+        setState(() => _nearbyPlaces = places);
+      }
+    } catch (_) {
+      // silencioso — não interrompe o usuário
+    } finally {
+      if (mounted) setState(() => _loadingPlaces = false);
+    }
+  }
+
+  // ── C) Autocomplete de busca ───────────────────────────────────────────────
+
+  void _onBuscaChanged(String query) {
+    _debounceTimer?.cancel();
+    if (query.trim().length < 3) {
+      setState(() { _suggestions = []; _showSuggestions = false; });
+      return;
+    }
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () => _buscarSugestoes(query));
+  }
+
+  Future<void> _buscarSugestoes(String query) async {
+    if (!mounted) return;
+    try {
+      final lat = _userPos?.latitude ?? -15.78;
+      final lng = _userPos?.longitude ?? -47.93;
+      final url = Uri.parse(
+          'https://nominatim.openstreetmap.org/search'
+          '?q=${Uri.encodeComponent(query)}'
+          '&format=json&limit=5&accept-language=pt-BR&countrycodes=BR'
+          '&viewbox=${lng - 0.5},${lat + 0.5},${lng + 0.5},${lat - 0.5}'
+          '&bounded=1');
+      final resp = await http.get(url, headers: {
+        'User-Agent': 'IAFinanceiro/1.0 (alcidesferreira.costa@hotmail.com)'
+      }).timeout(const Duration(seconds: 6));
+      if (!mounted) return;
+      if (resp.statusCode == 200) {
+        final list = jsonDecode(resp.body) as List;
+        final sugs = list.map((item) {
+          final parts = (item['display_name'] as String).split(',');
+          return _SearchSuggestion(
+            nome: parts.first.trim(),
+            subtitulo: parts.skip(1).take(2).join(',').trim(),
+            lat: double.parse(item['lat'].toString()),
+            lng: double.parse(item['lon'].toString()),
+          );
+        }).toList();
+        setState(() { _suggestions = sugs; _showSuggestions = sugs.isNotEmpty; });
+      }
+    } catch (_) {}
+  }
+
+  void _selecionarSugestao(_SearchSuggestion s) {
+    _buscaCtrl.text = s.nome;
+    _buscaFocus.unfocus();
+    setState(() { _showSuggestions = false; _suggestions = []; });
+    final dest = _NavDestino(nome: s.nome, endereco: s.subtitulo, lat: s.lat, lng: s.lng);
+    _mapController.move(LatLng(s.lat, s.lng), 16);
+    setState(() => _tapDestino = dest);
+    _mostrarTapSheet(dest);
+  }
+
   void _centerOnUser() {
     setState(() => _seguirUsuario = true);
     if (_userPos != null) {
       _mapController.move(
-          LatLng(_userPos!.latitude, _userPos!.longitude), 14);
+          LatLng(_userPos!.latitude, _userPos!.longitude), 15);
     }
   }
 
@@ -473,6 +635,41 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
               ),
             ),
           ),
+          const SizedBox(height: 10),
+          // ── D) Publicar promoção neste local ──────────────────
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                Navigator.pop(context);
+                final ok = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CadastrarPromocaoPage(
+                      userPos: _userPos,
+                      nomeEstabelecimento: d.nome == 'Local selecionado' ? null : d.nome,
+                      localInicial: LatLng(d.lat, d.lng),
+                      categoriaInicial: d.categoria == 'Outros' ? null : d.categoria,
+                    ),
+                  ),
+                );
+                if (ok == true && mounted) {
+                  _updateStream();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Promoção publicada! +10 pontos'), backgroundColor: Color(0xFF00E676)),
+                  );
+                }
+              },
+              icon: const Icon(Icons.add_location_alt, color: Color(0xFF4CAF50)),
+              label: const Text('Publicar promoção aqui',
+                  style: TextStyle(color: Color(0xFF4CAF50), fontWeight: FontWeight.bold)),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF4CAF50)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
         ]),
       ),
     ).whenComplete(() {
@@ -598,7 +795,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
               options: MapOptions(
                 initialCenter:
                     LatLng(_userPos!.latitude, _userPos!.longitude),
-                initialZoom: 14,
+                initialZoom: 15,
                 onTap: _mapaTap,
                 onPositionChanged: (_, hasGesture) {
                   if (hasGesture && _seguirUsuario) {
@@ -609,9 +806,11 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
               children: [
                 TileLayer(
                   urlTemplate:
-                      'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+                      'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
                   userAgentPackageName: 'com.mycompany.iafinanceiro',
-                  maxNativeZoom: 19,
+                  maxNativeZoom: 18,
+                  tileSize: 512,
+                  zoomOffset: -1,
                 ),
                 CircleLayer(circles: [
                   CircleMarker(
@@ -625,6 +824,33 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                     borderStrokeWidth: 1.8,
                   ),
                 ]),
+                // ── A) Marcadores Overpass (locais próximos) ──────────
+                MarkerLayer(
+                  markers: _nearbyPlaces
+                      .where((pl) =>
+                          _categoriaFiltro == 'Todas' ||
+                          pl.categoria == _categoriaFiltro)
+                      .map((pl) => Marker(
+                            point: LatLng(pl.lat, pl.lng),
+                            width: 72,
+                            height: 56,
+                            child: GestureDetector(
+                              onTap: () {
+                                final dest = _NavDestino(
+                                  nome: pl.nome,
+                                  endereco: '',
+                                  lat: pl.lat,
+                                  lng: pl.lng,
+                                  categoria: pl.categoria,
+                                );
+                                setState(() => _tapDestino = dest);
+                                _mostrarTapSheet(dest);
+                              },
+                              child: _OverpassMarker(pl),
+                            ),
+                          ))
+                      .toList(),
+                ),
                 MarkerLayer(
                   markers: [
                     // Usuário — marcador pulsante
@@ -766,65 +992,102 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
 
               const SizedBox(height: 8),
 
-              // Busca por endereço
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A1628).withOpacity(0.96),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.white12),
-                  boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
-                ),
-                child: Row(children: [
-                  const SizedBox(width: 12),
-                  const Icon(Icons.search, color: Colors.white38, size: 20),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      controller: _buscaCtrl,
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
-                      textInputAction: TextInputAction.search,
-                      onSubmitted: _pesquisarEndereco,
-                      decoration: const InputDecoration(
-                        hintText: 'Buscar endereço ou local...',
-                        hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
-                        border: InputBorder.none,
-                        isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 12),
+              // ── C) Busca com autocomplete ──────────────────────────
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF0A1628).withOpacity(0.96),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.white12),
+                    boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)],
+                  ),
+                  child: Row(children: [
+                    const SizedBox(width: 12),
+                    const Icon(Icons.search, color: Colors.white38, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _buscaCtrl,
+                        focusNode: _buscaFocus,
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                        textInputAction: TextInputAction.search,
+                        onChanged: _onBuscaChanged,
+                        onSubmitted: (q) {
+                          setState(() { _showSuggestions = false; });
+                          _pesquisarEndereco(q);
+                        },
+                        decoration: const InputDecoration(
+                          hintText: 'Buscar local, estabelecimento...',
+                          hintStyle: TextStyle(color: Colors.white38, fontSize: 13),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 12),
+                        ),
                       ),
                     ),
-                  ),
-                  if (_buscando)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                              color: Color(0xFF4CAF50), strokeWidth: 2)),
-                    )
-                  else
-                    IconButton(
-                      icon: const Icon(Icons.arrow_forward,
-                          color: Color(0xFF4CAF50), size: 20),
-                      onPressed: () => _pesquisarEndereco(_buscaCtrl.text),
+                    if (_buscando)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12),
+                        child: SizedBox(width: 16, height: 16,
+                            child: CircularProgressIndicator(color: Color(0xFF4CAF50), strokeWidth: 2)),
+                      )
+                    else if (_buscaCtrl.text.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white38, size: 18),
+                        onPressed: () {
+                          _buscaCtrl.clear();
+                          setState(() { _suggestions = []; _showSuggestions = false; });
+                        },
+                      )
+                    else
+                      IconButton(
+                        icon: const Icon(Icons.arrow_forward, color: Color(0xFF4CAF50), size: 20),
+                        onPressed: () => _pesquisarEndereco(_buscaCtrl.text),
+                      ),
+                  ]),
+                ),
+                // Dropdown de sugestões
+                if (_showSuggestions)
+                  Container(
+                    margin: const EdgeInsets.only(top: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0D1F36),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white12),
+                      boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 8)],
                     ),
-                ]),
-              ),
+                    child: Column(
+                      children: _suggestions.map((s) => InkWell(
+                        onTap: () => _selecionarSugestao(s),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          child: Row(children: [
+                            const Icon(Icons.place, color: Color(0xFF4CAF50), size: 16),
+                            const SizedBox(width: 10),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(s.nome, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                              if (s.subtitulo.isNotEmpty)
+                                Text(s.subtitulo, style: const TextStyle(color: Colors.white38, fontSize: 11),
+                                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ])),
+                          ]),
+                        ),
+                      )).toList(),
+                    ),
+                  ),
+              ]),
 
               const SizedBox(height: 8),
 
-              // Filtros
+              // Filtros — raio + chips de categoria (B)
               Row(children: [
-                // Raio
                 _FilterBox(
                   child: DropdownButton<double>(
                     value: _raioKm,
                     dropdownColor: const Color(0xFF0A1628),
-                    style: const TextStyle(
-                        color: Colors.white, fontSize: 13),
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
                     underline: const SizedBox(),
-                    icon: const Icon(Icons.arrow_drop_down,
-                        color: Color(0xFF4CAF50), size: 20),
+                    icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF4CAF50), size: 20),
                     items: const [
                       DropdownMenuItem(value: 1, child: Text('1 km')),
                       DropdownMenuItem(value: 5, child: Text('5 km')),
@@ -835,40 +1098,69 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                       if (v != null) {
                         setState(() => _raioKm = v);
                         _updateStream();
+                        _lastFetchPos = null; // força rebusca Overpass
+                        _fetchNearbyPlaces();
                       }
                     },
                   ),
                 ),
-                const SizedBox(width: 8),
-
-                // Categoria
-                Expanded(
-                  child: _FilterBox(
-                    child: DropdownButton<String>(
-                      value: _categoriaFiltro,
-                      isExpanded: true,
-                      dropdownColor: const Color(0xFF0A1628),
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 13),
-                      underline: const SizedBox(),
-                      icon: const Icon(Icons.arrow_drop_down,
-                          color: Color(0xFF4CAF50), size: 20),
-                      items: kCategorias
-                          .map((c) => DropdownMenuItem(
-                              value: c,
-                              child: Text(c,
-                                  overflow: TextOverflow.ellipsis)))
-                          .toList(),
-                      onChanged: (v) {
-                        if (v != null) {
-                          setState(() => _categoriaFiltro = v);
-                          _updateStream();
-                        }
-                      },
-                    ),
-                  ),
-                ),
+                if (_loadingPlaces) ...[
+                  const SizedBox(width: 10),
+                  const SizedBox(width: 14, height: 14,
+                      child: CircularProgressIndicator(color: Color(0xFF4CAF50), strokeWidth: 1.5)),
+                ],
               ]),
+              const SizedBox(height: 6),
+              // ── B) Chips de categoria ──────────────────────────────
+              SizedBox(
+                height: 34,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.zero,
+                  itemCount: kCategorias.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 6),
+                  itemBuilder: (_, i) {
+                    final cat = kCategorias[i];
+                    final isActive = _categoriaFiltro == cat;
+                    final cor = cat == 'Todas'
+                        ? const Color(0xFF4CAF50)
+                        : categoriaColor(cat);
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() => _categoriaFiltro = cat);
+                        _updateStream();
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? cor.withOpacity(0.22)
+                              : const Color(0xFF0A1628).withOpacity(0.92),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: isActive ? cor : Colors.white12, width: 1.2),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          if (cat != 'Todas') ...[
+                            Icon(categoriaIcon(cat),
+                                color: isActive ? cor : Colors.white38, size: 12),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            cat == 'Todas' ? '🗺 Todas' : cat.split(' ').first,
+                            style: TextStyle(
+                              color: isActive ? cor : Colors.white54,
+                              fontSize: 11,
+                              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ]),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ]),
           ),
         ),
@@ -1127,6 +1419,49 @@ class _PromoMarker extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
         ]),
+      ),
+    ]);
+  }
+}
+
+// ── Marcador de local Overpass (sem promoção) ─────────────────────────────────
+
+class _OverpassMarker extends StatelessWidget {
+  final _OverpassPlace place;
+  const _OverpassMarker(this.place);
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = categoriaColor(place.categoria);
+    final nome = place.nome.length > 12
+        ? '${place.nome.substring(0, 11)}…'
+        : place.nome;
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: cor.withOpacity(0.18),
+          shape: BoxShape.circle,
+          border: Border.all(color: cor.withOpacity(0.7), width: 1.5),
+        ),
+        child: Icon(categoriaIcon(place.categoria), color: cor, size: 13),
+      ),
+      Container(
+        constraints: const BoxConstraints(maxWidth: 70),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0A1628).withOpacity(0.82),
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(color: cor.withOpacity(0.35)),
+        ),
+        child: Text(
+          nome,
+          style: TextStyle(color: cor, fontSize: 8, fontWeight: FontWeight.w600),
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     ]);
   }
@@ -1849,14 +2184,16 @@ class _NavegacaoPageState extends State<_NavegacaoPage> {
           mapController: _mapController,
           options: MapOptions(
             initialCenter: LatLng(dest.lat, dest.lng),
-            initialZoom: 14,
+            initialZoom: 15,
           ),
           children: [
             TileLayer(
               urlTemplate:
-                  'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+                  'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
               userAgentPackageName: 'com.mycompany.iafinanceiro',
-              maxNativeZoom: 19,
+              maxNativeZoom: 18,
+              tileSize: 512,
+              zoomOffset: -1,
             ),
             if (_rotaPontos.isNotEmpty)
               PolylineLayer(polylines: [

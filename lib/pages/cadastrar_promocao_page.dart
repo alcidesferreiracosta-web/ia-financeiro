@@ -12,7 +12,16 @@ import 'gps_economia_page.dart' show categoriaColor, categoriaIcon;
 
 class CadastrarPromocaoPage extends StatefulWidget {
   final Position? userPos;
-  const CadastrarPromocaoPage({super.key, this.userPos});
+  final String? nomeEstabelecimento;
+  final LatLng? localInicial;
+  final String? categoriaInicial;
+  const CadastrarPromocaoPage({
+    super.key,
+    this.userPos,
+    this.nomeEstabelecimento,
+    this.localInicial,
+    this.categoriaInicial,
+  });
 
   @override
   State<CadastrarPromocaoPage> createState() =>
@@ -37,9 +46,17 @@ class _CadastrarPromocaoPageState extends State<CadastrarPromocaoPage> {
   @override
   void initState() {
     super.initState();
-    if (widget.userPos != null) {
+    if (widget.nomeEstabelecimento != null) {
+      _nomeCtrl.text = widget.nomeEstabelecimento!;
+    }
+    if (widget.localInicial != null) {
+      _localSelecionado = widget.localInicial;
+    } else if (widget.userPos != null) {
       _localSelecionado =
           LatLng(widget.userPos!.latitude, widget.userPos!.longitude);
+    }
+    if (widget.categoriaInicial != null) {
+      _categoria = widget.categoriaInicial!;
     }
   }
 

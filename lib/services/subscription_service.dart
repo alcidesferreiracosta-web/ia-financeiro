@@ -8,8 +8,28 @@ class SubscriptionService {
   static SubscriptionService get instance => _instance;
   SubscriptionService._();
 
+  // Testadores do Play Console — bypassam o paywall
+  static const _testerEmails = {
+    'alcidesferreira.costa21@gmail.com',
+    'alcidesferreira.costa@hotmail.com',
+    'betaniaba.96@gmail.com',
+    'edmilson777queiroz@gmail.com',
+    'estevisdany@gmail.com',
+    'felipe17412@gmail.com',
+    'ivancouto555@gmail.com',
+    'pedro.couto.ferreiraa@gmail.com',
+    'rosangelaestevescouto@gmail.com',
+    'sheyla.sophia.pedro@gmail.com',
+    'soepestore@gmail.com',
+  };
+
   bool _isPremium = false;
-  bool get isSubscribed => kDebugMode || _isPremium;
+  bool get isSubscribed => kDebugMode || _isPremium || _isTester;
+
+  bool get _isTester {
+    final email = FirebaseAuth.instance.currentUser?.email?.toLowerCase().trim();
+    return email != null && _testerEmails.contains(email);
+  }
 
   final _statusController = StreamController<bool>.broadcast();
   Stream<bool> get statusStream => _statusController.stream;
