@@ -11,6 +11,7 @@ class CriarContaPage extends StatefulWidget {
 
 class _CriarContaPageState extends State<CriarContaPage> {
   final _nomeController = TextEditingController();
+  final _telefoneController = TextEditingController();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   final _confirmarSenhaController = TextEditingController();
@@ -44,11 +45,13 @@ class _CriarContaPageState extends State<CriarContaPage> {
 
   Future<void> _criarConta() async {
     final nome = _nomeController.text.trim();
+    final telefone = _telefoneController.text.trim();
     final email = _emailController.text.trim();
     final senha = _senhaController.text;
     final confirmar = _confirmarSenhaController.text;
 
     if (nome.isEmpty) { setState(() => _erro = 'Informe seu nome completo.'); return; }
+    if (telefone.isEmpty) { setState(() => _erro = 'Informe seu número de telefone.'); return; }
     if (email.isEmpty) { setState(() => _erro = 'Informe seu e-mail.'); return; }
     if (senha.length < 6) { setState(() => _erro = 'A senha deve ter pelo menos 6 caracteres.'); return; }
     if (senha != confirmar) { setState(() => _erro = 'As senhas não coincidem.'); return; }
@@ -60,11 +63,22 @@ class _CriarContaPageState extends State<CriarContaPage> {
         password: senha,
       );
       await cred.user!.updateDisplayName(nome);
+      final trialUntil = Timestamp.fromDate(DateTime.now().add(const Duration(days: 7)));
       await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
         'uid': cred.user!.uid,
         'email': email,
         'nome': nome,
+        'telefone': telefone,
         'rendaMensal': 0.0,
+        'criadoEm': FieldValue.serverTimestamp(),
+      });
+      await FirebaseFirestore.instance.collection('usuarios').doc(cred.user!.uid).set({
+        'uid': cred.user!.uid,
+        'email': email,
+        'nome': nome,
+        'premium': true,
+        'trial': true,
+        'premium_until': trialUntil,
         'criadoEm': FieldValue.serverTimestamp(),
       });
       // Limpa toda a pilha de navegação — StreamBuilder detecta o login e abre o HomePage
@@ -104,6 +118,13 @@ class _CriarContaPageState extends State<CriarContaPage> {
                 style: const TextStyle(color: Colors.white),
                 decoration: _inputDecoration('Nome completo', Icons.person_outline),
                 textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _telefoneController,
+                style: const TextStyle(color: Colors.white),
+                decoration: _inputDecoration('Telefone (WhatsApp)', Icons.phone_outlined),
+                keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 14),
               TextField(

@@ -38,6 +38,74 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _esqueceuSenha() async {
+    final emailCtrl = TextEditingController(text: _emailController.text.trim());
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A2A3A),
+        title: const Text('Redefinir senha', style: TextStyle(color: Colors.white)),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('Informe seu e-mail para receber o link de redefinição.',
+              style: TextStyle(color: Colors.white70, fontSize: 13)),
+          const SizedBox(height: 16),
+          TextField(
+            controller: emailCtrl,
+            style: const TextStyle(color: Colors.white),
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              labelText: 'E-mail',
+              labelStyle: const TextStyle(color: Colors.white54),
+              prefixIcon: const Icon(Icons.email_outlined, color: Colors.white54),
+              filled: true,
+              fillColor: Colors.white10,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+            ),
+          ),
+        ]),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4FC3F7),
+              foregroundColor: Colors.black,
+            ),
+            onPressed: () async {
+              final email = emailCtrl.text.trim();
+              if (email.isEmpty) return;
+              try {
+                await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+                if (ctx.mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Link enviado para $email. Verifique sua caixa de entrada.'),
+                      backgroundColor: Colors.green.shade700,
+                    ),
+                  );
+                }
+              } on FirebaseAuthException {
+                if (ctx.mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('E-mail não encontrado. Verifique e tente novamente.'),
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text('Enviar link'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _loginGoogle() async {
     setState(() { _loading = true; _erro = null; });
     try {
@@ -100,6 +168,15 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 onSubmitted: (_) => _loginEmail(),
+              ),
+
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _esqueceuSenha,
+                  child: const Text('Esqueci minha senha',
+                      style: TextStyle(color: Color(0xFF4FC3F7), fontSize: 13)),
+                ),
               ),
 
               if (_erro != null) ...[

@@ -19,3 +19,4 @@ build/
 .history
 .svn/
 migrate_working_dir/
+serviceAccount.json

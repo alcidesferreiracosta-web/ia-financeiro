@@ -21,10 +21,21 @@ class SubscriptionService {
     'rosangelaestevescouto@gmail.com',
     'sheyla.sophia.pedro@gmail.com',
     'soepestore@gmail.com',
+    'eliaslyon30@gmail.com',
+    'almerita.silva.maria@gmail.com',
   };
 
   bool _isPremium = false;
+  bool _isTrial = false;
+  DateTime? _premiumUntil;
+
   bool get isSubscribed => kDebugMode || _isPremium || _isTester;
+  bool get isTrial => _isTrial && !_isTester && !kDebugMode;
+  int get trialDaysLeft {
+    if (_premiumUntil == null) return 0;
+    final diff = _premiumUntil!.difference(DateTime.now()).inDays;
+    return diff < 0 ? 0 : diff;
+  }
 
   bool get _isTester {
     final email = FirebaseAuth.instance.currentUser?.email?.toLowerCase().trim();
@@ -79,19 +90,25 @@ class SubscriptionService {
         .doc(uid)
         .snapshots()
         .listen((doc) {
-      if (!doc.exists) { _setPremium(false); return; }
+      if (!doc.exists) { _setPremium(false, false, null); return; }
       final data = doc.data()!;
       bool active = false;
+      bool trial = false;
+      DateTime? until;
       if (data['premium'] == true) {
-        final until = data['premium_until'];
-        active = until == null || (until as Timestamp).toDate().isAfter(DateTime.now());
+        final rawUntil = data['premium_until'];
+        until = rawUntil != null ? (rawUntil as Timestamp).toDate() : null;
+        active = until == null || until.isAfter(DateTime.now());
+        trial = active && data['trial'] == true;
       }
-      _setPremium(active);
+      _setPremium(active, trial, until);
     });
   }
 
-  void _setPremium(bool value) {
+  void _setPremium(bool value, bool trial, DateTime? until) {
     _isPremium = value;
+    _isTrial = trial;
+    _premiumUntil = until;
     _statusController.add(value);
   }
 

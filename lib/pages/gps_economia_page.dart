@@ -98,6 +98,7 @@ class _OverpassPlace {
     if (amenity == 'supermarket' || amenity == 'convenience' ||
         shop.contains('supermarket') || shop.contains('convenience') ||
         shop.contains('grocery') || shop.contains('greengrocer')) return 'Mercados';
+    if (shop == 'mall' || amenity == 'marketplace') return 'Outros';
     if (amenity == 'fuel') return 'Postos de combustível';
     if (amenity == 'pharmacy') return 'Farmácias';
     if (shop == 'bakery' || amenity == 'bakery') return 'Padarias';
@@ -112,8 +113,10 @@ class _OverpassPlace {
     final tags = element['tags'] as Map? ?? {};
     final nome = (tags['name'] as String?)?.trim() ??
         (tags['brand'] as String?)?.trim() ?? '';
-    final lat = (element['lat'] as num).toDouble();
-    final lng = (element['lon'] as num).toDouble();
+    // nodes have lat/lon directly; ways/relations return center
+    final center = element['center'] as Map?;
+    final lat = ((center?['lat'] ?? element['lat']) as num).toDouble();
+    final lng = ((center?['lon'] ?? element['lon']) as num).toDouble();
     return _OverpassPlace(
       id: element['id'].toString(),
       nome: nome,
@@ -315,12 +318,14 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
       final lat = _userPos!.latitude;
       final lng = _userPos!.longitude;
       final query =
-          '[out:json][timeout:15];'
+          '[out:json][timeout:20];'
           '('
           'node["amenity"~"supermarket|fuel|pharmacy|restaurant|fast_food|cafe|bakery"](around:$raioM,$lat,$lng);'
-          'node["shop"~"supermarket|convenience|greengrocer|bakery|butcher|grocery"](around:$raioM,$lat,$lng);'
+          'way["amenity"~"supermarket|fuel|pharmacy|restaurant|fast_food|cafe|bakery"](around:$raioM,$lat,$lng);'
+          'node["shop"~"supermarket|mall|convenience|greengrocer|bakery|butcher|grocery"](around:$raioM,$lat,$lng);'
+          'way["shop"~"supermarket|mall|convenience|greengrocer|bakery|butcher|grocery"](around:$raioM,$lat,$lng);'
           ');'
-          'out body;';
+          'out center;';
       final url = Uri.parse('https://overpass-api.de/api/interpreter');
       final resp = await http.post(url, body: {'data': query}).timeout(const Duration(seconds: 20));
       if (!mounted) return;
@@ -806,7 +811,7 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
               children: [
                 TileLayer(
                   urlTemplate:
-                      'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+                      'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
                   userAgentPackageName: 'com.mycompany.iafinanceiro',
                   maxNativeZoom: 18,
                   tileSize: 512,
@@ -2189,7 +2194,7 @@ class _NavegacaoPageState extends State<_NavegacaoPage> {
           children: [
             TileLayer(
               urlTemplate:
-                  'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
+                  'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
               userAgentPackageName: 'com.mycompany.iafinanceiro',
               maxNativeZoom: 18,
               tileSize: 512,
