@@ -1824,7 +1824,7 @@ class _PromoDetalheSheetState extends State<_PromoDetalheSheet> {
                             ? null
                             : () async {
                                 await GpsEconomiaService.instance
-                                    .curtirPromocao(p.id);
+                                    .curtirPromocao(p.id, p.criadoPorUid);
                                 setState(() => _curtiu = true);
                               },
                       )),

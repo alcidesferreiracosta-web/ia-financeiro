@@ -35,44 +35,40 @@ class _RankingGpsPageState extends State<RankingGpsPage> {
     }
   }
 
-  String _rankEmoji(String rank) {
-    switch (rank) {
-      case 'ouro':
-        return '🥇';
-      case 'prata':
-        return '🥈';
-      case 'bronze':
-        return '🥉';
-      default:
-        return '⭐';
+  String _nivelEmoji(String nivel) {
+    switch (nivel) {
+      case 'rei':          return '👑';
+      case 'lenda':        return '💎';
+      case 'mestre':       return '🥇';
+      case 'especialista': return '🥈';
+      default:             return '🥉'; // cacador
     }
   }
 
-  String _rankLabel(String rank) {
-    switch (rank) {
-      case 'ouro':
-        return 'Caçador Ouro';
-      case 'prata':
-        return 'Caçador Prata';
-      case 'bronze':
-        return 'Caçador Bronze';
-      default:
-        return 'Iniciante';
+  String _nivelLabel(String nivel) {
+    switch (nivel) {
+      case 'rei':          return 'Rei da Economia';
+      case 'lenda':        return 'Lenda da Economia';
+      case 'mestre':       return 'Mestre da Economia';
+      case 'especialista': return 'Especialista em Economia';
+      default:             return 'Caçador de Ofertas';
     }
   }
 
-  Color _rankColor(String rank) {
-    switch (rank) {
-      case 'ouro':
-        return const Color(0xFFFFD700);
-      case 'prata':
-        return const Color(0xFFC0C0C0);
-      case 'bronze':
-        return const Color(0xFFCD7F32);
-      default:
-        return Colors.white54;
+  Color _nivelColor(String nivel) {
+    switch (nivel) {
+      case 'rei':          return const Color(0xFFFFD700);
+      case 'lenda':        return const Color(0xFF9C27B0);
+      case 'mestre':       return const Color(0xFFFF9800);
+      case 'especialista': return const Color(0xFFB0BEC5);
+      default:             return const Color(0xFFCD7F32);
     }
   }
+
+  // Aliases usados no restante do widget
+  String _rankEmoji(String rank) => _nivelEmoji(rank);
+  String _rankLabel(String rank) => _nivelLabel(rank);
+  Color _rankColor(String rank) => _nivelColor(rank);
 
   @override
   Widget build(BuildContext context) {
@@ -157,10 +153,24 @@ class _RankingGpsPageState extends State<RankingGpsPage> {
                                 fontSize: 13)),
                         const SizedBox(height: 8),
                         _PontoRow('+10 pts', 'Publicar uma promoção'),
-                        _PontoRow('+5 pts',
-                            'Sua promoção ser confirmada por alguém'),
-                        _PontoRow('+20 pts',
-                            'Sua promoção atingir 50, 100 ou 500 acessos'),
+                        _PontoRow('+20 pts', 'Sua promoção ser confirmada por alguém'),
+                        _PontoRow('+5 pts',  'Sua oferta ser salva por alguém'),
+                        _PontoRow('+5 pts',  'Sua oferta ser compartilhada'),
+                        _PontoRow('+2 pts',  'Sua oferta receber curtida'),
+                        _PontoRow('+20 pts', 'Completar missão diária'),
+                        _PontoRow('+1 pt',   'Login diário'),
+                        const SizedBox(height: 8),
+                        const Text('Níveis',
+                            style: TextStyle(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12)),
+                        const SizedBox(height: 6),
+                        _NivelRow('🥉', 'Caçador de Ofertas',      '0 pts'),
+                        _NivelRow('🥈', 'Especialista em Economia', '500 pts'),
+                        _NivelRow('🥇', 'Mestre da Economia',       '2.000 pts'),
+                        _NivelRow('💎', 'Lenda da Economia',        '5.000 pts'),
+                        _NivelRow('👑', 'Rei da Economia',          '10.000 pts'),
                       ]),
                 ),
               ),
@@ -262,6 +272,32 @@ class _RankingGpsPageState extends State<RankingGpsPage> {
                       ),
               ),
             ]),
+    );
+  }
+}
+
+class _NivelRow extends StatelessWidget {
+  final String emoji;
+  final String nome;
+  final String pts;
+  const _NivelRow(this.emoji, this.nome, this.pts);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(children: [
+        Text(emoji, style: const TextStyle(fontSize: 14)),
+        const SizedBox(width: 6),
+        Expanded(
+            child: Text(nome,
+                style: const TextStyle(color: Colors.white70, fontSize: 11))),
+        Text(pts,
+            style: const TextStyle(
+                color: Color(0xFF4CAF50),
+                fontSize: 11,
+                fontWeight: FontWeight.bold)),
+      ]),
     );
   }
 }

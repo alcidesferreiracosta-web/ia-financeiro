@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'services/subscription_service.dart';
+import 'services/gps_economia_service.dart';
 import 'pages/login_page.dart';
 import 'pages/main_nav.dart';
 import 'pages/paywall_page.dart';
@@ -60,6 +61,7 @@ class _SubscriptionGateState extends State<_SubscriptionGate> {
     super.initState();
     _isSubscribed = SubscriptionService.instance.isSubscribed;
     SubscriptionService.instance.init();
+    GpsEconomiaService.instance.loginDiario();
     _sub = SubscriptionService.instance.statusStream.listen((value) {
       if (mounted) setState(() => _isSubscribed = value);
     });

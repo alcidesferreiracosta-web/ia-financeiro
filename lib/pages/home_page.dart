@@ -422,6 +422,10 @@ class _HomePageState extends State<HomePage> {
 
                       const SizedBox(height: 12),
 
+                      const _MissoesDiariasCard(),
+
+                      const SizedBox(height: 12),
+
                       const _EconomiaGeradaCard(),
                     ],
                   ),
@@ -483,6 +487,129 @@ class _AcaoBtn extends StatelessWidget {
   }
 }
 
+// ── Missões Diárias ───────────────────────────────────────────────────────────
+
+class _MissoesDiariasCard extends StatefulWidget {
+  const _MissoesDiariasCard();
+
+  @override
+  State<_MissoesDiariasCard> createState() => _MissoesDiariasCardState();
+}
+
+class _MissoesDiariasCardState extends State<_MissoesDiariasCard> {
+  List<Map<String, dynamic>> _missoes = [];
+  bool _carregando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    GpsEconomiaService.instance
+        .getMissoesDiarias()
+        .then((m) { if (mounted) setState(() { _missoes = m; _carregando = false; }); });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_carregando) return const SizedBox.shrink();
+    final concluidas = _missoes.where((m) => m['concluida'] == true).length;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D2137),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFD700).withOpacity(0.3)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Text('⚡', style: TextStyle(fontSize: 16)),
+          const SizedBox(width: 8),
+          const Expanded(
+            child: Text('Missões Diárias',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14)),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFD700).withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text('$concluidas/${_missoes.length}',
+                style: const TextStyle(
+                    color: Color(0xFFFFD700),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold)),
+          ),
+        ]),
+        const SizedBox(height: 12),
+        ..._missoes.map((m) {
+          final atual = (m['atual'] as int?) ?? 0;
+          final meta = (m['meta'] as int?) ?? 1;
+          final concluida = m['concluida'] == true;
+          final progresso = (atual / meta).clamp(0.0, 1.0);
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Row(children: [
+              Text(m['icone'] as String? ?? '🎯',
+                  style: const TextStyle(fontSize: 16)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Expanded(
+                          child: Text(m['label'] as String? ?? '',
+                              style: TextStyle(
+                                  color: concluida
+                                      ? const Color(0xFF4CAF50)
+                                      : Colors.white70,
+                                  fontSize: 12,
+                                  fontWeight: concluida
+                                      ? FontWeight.bold
+                                      : FontWeight.normal)),
+                        ),
+                        Text('$atual/$meta',
+                            style: TextStyle(
+                                color: concluida
+                                    ? const Color(0xFF4CAF50)
+                                    : Colors.white38,
+                                fontSize: 11)),
+                      ]),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progresso,
+                          backgroundColor: Colors.white10,
+                          valueColor: AlwaysStoppedAnimation(
+                              concluida
+                                  ? const Color(0xFF4CAF50)
+                                  : const Color(0xFFFFD700)),
+                          minHeight: 5,
+                        ),
+                      ),
+                    ]),
+              ),
+              if (concluida) ...[
+                const SizedBox(width: 8),
+                const Text('+20 pts',
+                    style: TextStyle(
+                        color: Color(0xFF4CAF50),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold)),
+              ],
+            ]),
+          );
+        }),
+      ]),
+    );
+  }
+}
+
 // ── Economia Gerada pelo GPS ──────────────────────────────────────────────────
 
 class _EconomiaGeradaCard extends StatefulWidget {
@@ -497,6 +624,8 @@ class _EconomiaGeradaCardState extends State<_EconomiaGeradaCard> {
   bool _carregando = true;
   int _pontos = 0;
   String _rankTier = '';
+  double _econMes = 0;
+  double _econAno = 0;
 
   @override
   void initState() {
@@ -505,13 +634,21 @@ class _EconomiaGeradaCardState extends State<_EconomiaGeradaCard> {
   }
 
   Future<void> _carregar() async {
-    final econ = await GpsEconomiaService.instance.getEconomiaTotal();
-    final dados = await GpsEconomiaService.instance.getMeusDados();
+    final results = await Future.wait([
+      GpsEconomiaService.instance.getEconomiaTotal(),
+      GpsEconomiaService.instance.getMeusDados(),
+      GpsEconomiaService.instance.getEconomiaMetrics(),
+    ]);
     if (mounted) {
+      final econ = results[0] as Map<String, dynamic>;
+      final dados = results[1] as Map<String, dynamic>?;
+      final metrics = results[2] as EconomiaMetrics;
       setState(() {
         _economia = econ;
         _pontos = (dados?['pontos'] as num?)?.toInt() ?? 0;
         _rankTier = (dados?['rank'] as String?) ?? '';
+        _econMes = metrics.mes;
+        _econAno = metrics.ano;
         _carregando = false;
       });
     }
@@ -521,19 +658,23 @@ class _EconomiaGeradaCardState extends State<_EconomiaGeradaCard> {
 
   Color _rankColor() {
     switch (_rankTier) {
-      case 'ouro': return const Color(0xFFFFD700);
-      case 'prata': return const Color(0xFFB0BEC5);
-      case 'bronze': return const Color(0xFFFF8F00);
-      default: return const Color(0xFF4CAF50);
+      case 'rei':          return const Color(0xFFFFD700);
+      case 'lenda':        return const Color(0xFF9C27B0);
+      case 'mestre':       return const Color(0xFFFF9800);
+      case 'especialista': return const Color(0xFFB0BEC5);
+      case 'cacador':      return const Color(0xFFCD7F32);
+      default:             return const Color(0xFF4CAF50);
     }
   }
 
   String _rankLabel() {
     switch (_rankTier) {
-      case 'ouro': return '🥇 Nível Ouro';
-      case 'prata': return '🥈 Nível Prata';
-      case 'bronze': return '🥉 Nível Bronze';
-      default: return _rankTier.isEmpty ? '' : '🌱 Iniciante';
+      case 'rei':          return '👑 Rei da Economia';
+      case 'lenda':        return '💎 Lenda da Economia';
+      case 'mestre':       return '🥇 Mestre da Economia';
+      case 'especialista': return '🥈 Especialista';
+      case 'cacador':      return '🥉 Caçador de Ofertas';
+      default:             return _rankTier.isEmpty ? '' : '🥉 Caçador de Ofertas';
     }
   }
 
@@ -604,6 +745,18 @@ class _EconomiaGeradaCardState extends State<_EconomiaGeradaCard> {
           ),
         ],
 
+        if (_econMes > 0 || _econAno > 0) ...[
+          const SizedBox(height: 10),
+          Row(children: [
+            Expanded(child: _MetricaEco(label: 'Este mês',   valor: _econMes)),
+            const SizedBox(width: 8),
+            Expanded(child: _MetricaEco(label: 'Este ano',   valor: _econAno)),
+            const SizedBox(width: 8),
+            Expanded(child: _MetricaEco(label: 'Total geral',
+                valor: _economia.values.fold(0.0, (s, v) => s + ((v as num?)?.toDouble() ?? 0)))),
+          ]),
+        ],
+
         if (_pontos > 0) ...[
           const SizedBox(height: 8),
           Row(children: [
@@ -637,6 +790,41 @@ class _EconomiaGeradaCardState extends State<_EconomiaGeradaCard> {
             );
           }),
         ],
+      ]),
+    );
+  }
+}
+
+// ── Métrica de economia mini ──────────────────────────────────────────────────
+
+class _MetricaEco extends StatelessWidget {
+  final String label;
+  final double valor;
+  const _MetricaEco({required this.label, required this.valor});
+
+  @override
+  Widget build(BuildContext context) {
+    final txt = 'R\$ ${valor.toStringAsFixed(2).replaceAll('.', ',')}';
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFF4CAF50).withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFF4CAF50).withOpacity(0.2)),
+      ),
+      child: Column(children: [
+        Text(label,
+            style: const TextStyle(color: Colors.white38, fontSize: 9),
+            textAlign: TextAlign.center),
+        const SizedBox(height: 3),
+        Text(txt,
+            style: const TextStyle(
+                color: Color(0xFF66BB6A),
+                fontSize: 11,
+                fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis),
       ]),
     );
   }

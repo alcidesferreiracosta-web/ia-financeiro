@@ -122,6 +122,20 @@ class _CadastrarPromocaoPageState extends State<CadastrarPromocaoPage> {
         foto: _foto,
       );
       if (mounted) Navigator.pop(context, true);
+    } on FotoUploadException catch (e) {
+      // Promoção foi salva — retorna sucesso com aviso laranja
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Expanded(child: Text(e.message)),
+          ]),
+          backgroundColor: Colors.orange,
+          duration: const Duration(seconds: 4),
+        ));
+        Navigator.pop(context, true);
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _salvando = false);
