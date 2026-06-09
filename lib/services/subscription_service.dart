@@ -74,9 +74,12 @@ class SubscriptionService {
       'updated_at': FieldValue.serverTimestamp(),
     };
     if (isPremium) {
-      update['premium_until'] = Timestamp.fromDate(
-        DateTime.now().add(const Duration(days: 35)),
-      );
+      // Preserva premium_until do pending_activations (ex: vitalício = 2098)
+      // Se não tiver, padrão de 35 dias (assinatura mensal com margem)
+      final pendingUntil = data['premium_until'];
+      update['premium_until'] = pendingUntil ??
+          Timestamp.fromDate(DateTime.now().add(const Duration(days: 35)));
+      if (data['trial'] == true) update['trial'] = true;
     }
 
     await db.collection('usuarios').doc(user.uid).set(update, SetOptions(merge: true));

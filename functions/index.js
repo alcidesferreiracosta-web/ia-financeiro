@@ -169,33 +169,49 @@ exports.hotmartWebhook = onRequest({ cors: false }, async (req, res) => {
       if (authErr.code !== 'auth/user-not-found') throw authErr;
     }
 
+    // Detecta trial: Hotmart envia trialPeriod no plano de assinatura
+    const trialDays = body?.data?.subscription?.plan?.trial_period_duration ?? 0;
+    const isTrial = trialDays > 0;
+
     if (uid) {
       const userRef = db.collection('usuarios').doc(uid);
 
       if (ACTIVATE_EVENTS.has(event)) {
         const premiumUntil = new Date();
-        premiumUntil.setDate(premiumUntil.getDate() + 35);
-        await userRef.set({
+        // Trial: usa a duração exata do trial; assinatura normal: 35 dias de margem
+        premiumUntil.setDate(premiumUntil.getDate() + (isTrial ? trialDays : 35));
+        const updateData = {
           premium: true,
           premium_until: admin.firestore.Timestamp.fromDate(premiumUntil),
           hotmart_email: buyerEmail,
           updated_at: admin.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true });
+        };
+        if (isTrial) updateData.trial = true;
+        await userRef.set(updateData, { merge: true });
       } else if (DEACTIVATE_EVENTS.has(event)) {
         await userRef.set({
           premium: false,
+          trial: false,
           updated_at: admin.firestore.FieldValue.serverTimestamp(),
         }, { merge: true });
       }
     } else {
       // Usuário pagou mas ainda não criou conta — salva para ativar no primeiro login
       if (ACTIVATE_EVENTS.has(event) || DEACTIVATE_EVENTS.has(event)) {
-        await db.collection('pending_activations').doc(buyerEmail).set({
+        const isPremium = ACTIVATE_EVENTS.has(event);
+        const pendingData = {
           email: buyerEmail,
           event,
-          premium: ACTIVATE_EVENTS.has(event),
+          premium: isPremium,
           created_at: admin.firestore.FieldValue.serverTimestamp(),
-        });
+        };
+        if (isPremium) {
+          const premiumUntil = new Date();
+          premiumUntil.setDate(premiumUntil.getDate() + (isTrial ? trialDays : 35));
+          pendingData.premium_until = admin.firestore.Timestamp.fromDate(premiumUntil);
+          if (isTrial) pendingData.trial = true;
+        }
+        await db.collection('pending_activations').doc(buyerEmail).set(pendingData);
       }
     }
 
