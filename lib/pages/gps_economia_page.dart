@@ -1184,6 +1184,8 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                 final eco = p.valorOriginal! - p.valorPromo;
                 return s + (eco > 0 ? eco : 0);
               });
+              final expirando = promos.where((p) =>
+                  !p.expirada && p.tempoRestante.inHours < 2).length;
               return Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12, vertical: 8),
@@ -1211,6 +1213,18 @@ class _GpsEconomiaPageState extends State<GpsEconomiaPage> {
                           color: Colors.white,
                           fontSize: 12,
                           fontWeight: FontWeight.bold)),
+                  if (expirando > 0) ...[
+                    const SizedBox(width: 6),
+                    Container(width: 1, height: 12, color: Colors.white24),
+                    const SizedBox(width: 6),
+                    Text(
+                      '🔥 $expirando expirando',
+                      style: const TextStyle(
+                          color: Color(0xFFFF5252),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
                   if (totalEco > 0) ...[
                     const SizedBox(width: 6),
                     Container(width: 1, height: 12, color: Colors.white24),
@@ -1371,38 +1385,92 @@ class _PromoMarker extends StatelessWidget {
   final PromoModel p;
   const _PromoMarker(this.p);
 
+  Color get _trustDotColor {
+    switch (p.trustLevel) {
+      case 'verde':  return const Color(0xFF4CAF50);
+      case 'amarelo': return const Color(0xFFFF9800);
+      default:        return const Color(0xFFF44336);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cor = categoriaColor(p.categoria);
     final nome = p.nomeEstabelecimento.length > 14
         ? '${p.nomeEstabelecimento.substring(0, 13)}…'
         : p.nomeEstabelecimento;
+    final expirando = !p.expirada && p.tempoRestante.inHours < 2;
+    final borderColor = expirando ? const Color(0xFFFF5252) : Colors.white;
+    final glowColor = expirando
+        ? const Color(0xFFFF5252).withOpacity(0.7)
+        : cor.withOpacity(0.55);
+    final labelColor = expirando ? const Color(0xFFD32F2F) : cor;
+
     return Column(mainAxisSize: MainAxisSize.min, children: [
-      // Ícone da categoria
-      Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: cor,
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2),
-          boxShadow: [
-            BoxShadow(color: cor.withOpacity(0.55), blurRadius: 8, spreadRadius: 1)
-          ],
+      Stack(clipBehavior: Clip.none, children: [
+        // Ícone da categoria
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: cor,
+            shape: BoxShape.circle,
+            border: Border.all(color: borderColor, width: expirando ? 2.5 : 2),
+            boxShadow: [BoxShadow(color: glowColor, blurRadius: 8, spreadRadius: 1)],
+          ),
+          child: Icon(categoriaIcon(p.categoria), color: Colors.white, size: 18),
         ),
-        child: Icon(categoriaIcon(p.categoria), color: Colors.white, size: 18),
-      ),
+        // Ponto de confiança (canto superior direito)
+        Positioned(
+          top: -1,
+          right: -1,
+          child: Container(
+            width: 13,
+            height: 13,
+            decoration: BoxDecoration(
+              color: _trustDotColor,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 1.5),
+            ),
+          ),
+        ),
+        // Badge "Xmin" quando expirando em breve
+        if (expirando)
+          Positioned(
+            bottom: -4,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD32F2F),
+                  borderRadius: BorderRadius.circular(4),
+                  boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 3)],
+                ),
+                child: Text(
+                  p.tempoRestante.inMinutes < 60
+                      ? '${p.tempoRestante.inMinutes}min'
+                      : '${p.tempoRestante.inHours}h',
+                  style: const TextStyle(
+                      color: Colors.white, fontSize: 7, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
+      ]),
+      const SizedBox(height: 2),
       // Triângulo apontando para o local
       CustomPaint(
         size: const Size(10, 6),
-        painter: _TrianglePainter(cor),
+        painter: _TrianglePainter(labelColor),
       ),
-      // Label: nome + preço
+      // Label: nome + preço + desconto
       Container(
         constraints: const BoxConstraints(maxWidth: 86),
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
         decoration: BoxDecoration(
-          color: cor,
+          color: labelColor,
           borderRadius: BorderRadius.circular(7),
           boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],
         ),
@@ -1415,14 +1483,25 @@ class _PromoMarker extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          Text(
-            'R\$ ${p.valorPromo.toStringAsFixed(2).replaceAll('.', ',')}',
-            style: TextStyle(
-                color: Colors.white.withOpacity(0.85),
-                fontSize: 8,
-                fontWeight: FontWeight.w500),
-            textAlign: TextAlign.center,
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
+            Text(
+              'R\$ ${p.valorPromo.toStringAsFixed(2).replaceAll('.', ',')}',
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 8,
+                  fontWeight: FontWeight.w500),
+            ),
+            if (p.percentualDesconto != null) ...[
+              const SizedBox(width: 3),
+              Text(
+                '-${p.percentualDesconto}%',
+                style: const TextStyle(
+                    color: Color(0xFFFFE082),
+                    fontSize: 7,
+                    fontWeight: FontWeight.bold),
+              ),
+            ],
+          ]),
         ]),
       ),
     ]);
@@ -1612,6 +1691,33 @@ class _PromoDetalheSheetState extends State<_PromoDetalheSheet> {
                     borderRadius: BorderRadius.circular(2)),
               ),
             ),
+
+            // Banner urgência — expirando em breve
+            if (!p.expirada && p.tempoRestante.inHours < 2)
+              Container(
+                margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD32F2F).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFFF5252).withOpacity(0.6)),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.alarm, color: Color(0xFFFF5252), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      p.tempoRestante.inMinutes < 60
+                          ? 'Expira em ${p.tempoRestante.inMinutes} minutos! Corra!'
+                          : 'Expira em ${p.tempoRestante.inHours}h ${p.tempoRestante.inMinutes % 60}min — quase acabando!',
+                      style: const TextStyle(
+                          color: Color(0xFFFF5252),
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ]),
+              ),
 
             // Foto
             if (p.fotoUrl != null)
