@@ -1,10 +1,8 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
 import '../models/promocao_model.dart';
 import '../services/gps_economia_service.dart';
@@ -38,7 +36,6 @@ class _CadastrarPromocaoPageState extends State<CadastrarPromocaoPage> {
 
   String _categoria = 'Mercados';
   int _duracaoHoras = 72;
-  File? _foto;
   LatLng? _localSelecionado;
   bool _salvando = false;
   bool _escolhendoLocal = false;
@@ -70,14 +67,6 @@ class _CadastrarPromocaoPageState extends State<CadastrarPromocaoPage> {
     super.dispose();
   }
 
-  Future<void> _pickFoto() async {
-    final picker = ImagePicker();
-    final xfile = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
-    if (xfile != null && mounted) {
-      setState(() => _foto = File(xfile.path));
-    }
-  }
-
   Future<void> _salvar() async {
     if (!_form.currentState!.validate()) return;
     if (_localSelecionado == null) {
@@ -101,7 +90,7 @@ class _CadastrarPromocaoPageState extends State<CadastrarPromocaoPage> {
         lng: _localSelecionado!.longitude,
         endereco: _enderecoCtrl.text.trim(),
         duracaoHoras: _duracaoHoras,
-        foto: _foto,
+        foto: null,
       );
       if (mounted) Navigator.pop(context, true);
     } on FotoUploadException catch (e) {
@@ -172,35 +161,6 @@ class _CadastrarPromocaoPageState extends State<CadastrarPromocaoPage> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Foto
-            GestureDetector(
-              onTap: _pickFoto,
-              child: Container(
-                height: 160,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: _foto != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.file(_foto!, fit: BoxFit.cover,
-                            width: double.infinity),
-                      )
-                    : const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add_a_photo,
-                              color: Colors.white38, size: 40),
-                          SizedBox(height: 8),
-                          Text('Adicionar foto',
-                              style: TextStyle(color: Colors.white38)),
-                        ],
-                      ),
-              ),
-            ),
-
             const SizedBox(height: 16),
 
             _Campo(
