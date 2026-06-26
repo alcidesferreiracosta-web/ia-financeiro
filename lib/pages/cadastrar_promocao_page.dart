@@ -72,25 +72,7 @@ class _CadastrarPromocaoPageState extends State<CadastrarPromocaoPage> {
 
   Future<void> _pickFoto() async {
     final picker = ImagePicker();
-    final source = await showModalBottomSheet<ImageSource>(
-      context: context,
-      backgroundColor: const Color(0xFF0A1628),
-      builder: (_) => Column(mainAxisSize: MainAxisSize.min, children: [
-        ListTile(
-          leading: const Icon(Icons.camera_alt, color: Colors.white),
-          title: const Text('Câmera', style: TextStyle(color: Colors.white)),
-          onTap: () => Navigator.pop(context, ImageSource.camera),
-        ),
-        ListTile(
-          leading: const Icon(Icons.photo_library, color: Colors.white),
-          title: const Text('Galeria', style: TextStyle(color: Colors.white)),
-          onTap: () => Navigator.pop(context, ImageSource.gallery),
-        ),
-        const SizedBox(height: 8),
-      ]),
-    );
-    if (source == null) return;
-    final xfile = await picker.pickImage(source: source, imageQuality: 80);
+    final xfile = await picker.pickImage(source: ImageSource.camera, imageQuality: 80);
     if (xfile != null && mounted) {
       setState(() => _foto = File(xfile.path));
     }

@@ -47,5 +47,9 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- Remove photopicker module dep from image_picker_android to avoid Play Store READ_MEDIA detection -->
+        <service android:name="com.google.android.gms.metadata.ModuleDependencies"
+            tools:node="remove"/>
+
     </application>
 </manifest>
