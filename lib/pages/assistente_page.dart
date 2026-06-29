@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import '../services/subscription_service.dart';
+import 'paywall_page.dart';
 
 class AssistentePage extends StatefulWidget {
   const AssistentePage({super.key});
@@ -84,6 +86,52 @@ class _AssistentePageState extends State<AssistentePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (SubscriptionService.instance.isFree) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0D1B2A),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF0D1B2A),
+          automaticallyImplyLeading: false,
+          title: const Text('FinanceIA', style: TextStyle(color: Colors.white)),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(Icons.psychology, color: Colors.orange, size: 72),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: Colors.orange.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+                child: const Text('Recurso Premium', style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.w600)),
+              ),
+              const SizedBox(height: 20),
+              const Text('Assistente FinanceIA com IA', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              const Text(
+                'O assistente com IA real analisa seus dados financeiros e dá conselhos personalizados. Disponível apenas para assinantes.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.white54, fontSize: 14, height: 1.5),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PaywallPage())),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Ver Planos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: const Color(0xFF0D1B2A),
       appBar: AppBar(

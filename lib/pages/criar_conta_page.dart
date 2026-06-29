@@ -63,7 +63,6 @@ class _CriarContaPageState extends State<CriarContaPage> {
         password: senha,
       );
       await cred.user!.updateDisplayName(nome);
-      final trialUntil = Timestamp.fromDate(DateTime.now().add(const Duration(days: 7)));
       await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
         'uid': cred.user!.uid,
         'email': email,
@@ -76,9 +75,8 @@ class _CriarContaPageState extends State<CriarContaPage> {
         'uid': cred.user!.uid,
         'email': email,
         'nome': nome,
-        'premium': true,
-        'trial': true,
-        'premium_until': trialUntil,
+        'premium': false,
+        'plan': 'free',
         'criadoEm': FieldValue.serverTimestamp(),
       });
       // Limpa toda a pilha de navegação — StreamBuilder detecta o login e abre o HomePage

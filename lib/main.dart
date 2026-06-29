@@ -59,7 +59,7 @@ class _SubscriptionGateState extends State<_SubscriptionGate> {
   @override
   void initState() {
     super.initState();
-    _isSubscribed = SubscriptionService.instance.isSubscribed;
+    _isSubscribed = SubscriptionService.instance.canAccessApp;
     SubscriptionService.instance.init();
     GpsEconomiaService.instance.loginDiario();
     _sub = SubscriptionService.instance.statusStream.listen((value) {

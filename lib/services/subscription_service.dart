@@ -27,9 +27,12 @@ class SubscriptionService {
 
   bool _isPremium = false;
   bool _isTrial = false;
+  bool _isFree = false;
   DateTime? _premiumUntil;
 
   bool get isSubscribed => kDebugMode || _isPremium || _isTester;
+  bool get isFree => _isFree && !_isPremium && !_isTester && !kDebugMode;
+  bool get canAccessApp => isSubscribed || _isFree;
   bool get isTrial => _isTrial && !_isTester && !kDebugMode;
   int get trialDaysLeft {
     if (_premiumUntil == null) return 0;
@@ -93,26 +96,30 @@ class SubscriptionService {
         .doc(uid)
         .snapshots()
         .listen((doc) {
-      if (!doc.exists) { _setPremium(false, false, null); return; }
+      if (!doc.exists) { _setPremium(false, false, true, null); return; }
       final data = doc.data()!;
       bool active = false;
       bool trial = false;
+      bool free = false;
       DateTime? until;
       if (data['premium'] == true) {
         final rawUntil = data['premium_until'];
         until = rawUntil != null ? (rawUntil as Timestamp).toDate() : null;
         active = until == null || until.isAfter(DateTime.now());
         trial = active && data['trial'] == true;
+      } else {
+        free = true;
       }
-      _setPremium(active, trial, until);
+      _setPremium(active, trial, free, until);
     });
   }
 
-  void _setPremium(bool value, bool trial, DateTime? until) {
+  void _setPremium(bool value, bool trial, bool free, DateTime? until) {
     _isPremium = value;
     _isTrial = trial;
+    _isFree = free;
     _premiumUntil = until;
-    _statusController.add(value);
+    _statusController.add(value || free);
   }
 
   void reset() {
