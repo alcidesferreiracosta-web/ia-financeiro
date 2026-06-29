@@ -28,6 +28,7 @@ jobs:
         run: |
           KEYSTORE_B64="${{ secrets.KEYSTORE_BASE64 }}"
           PASS="${{ secrets.KEYSTORE_PASSWORD }}"
+          if [ -z "$PASS" ]; then PASS="IaFinanceiro2026Alcides!"; fi
           if [ -z "$KEYSTORE_B64" ]; then
             echo "Gerando novo keystore (primeira vez)..."
             PASS="IaFinanceiro2026Alcides!"
