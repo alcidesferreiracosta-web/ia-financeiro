@@ -5,10 +5,10 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.CAMERA"/>
-    <!-- Leitura de galeria APENAS quando user seleciona foto de comprovante -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
-    <!-- Remove demais permissões de storage adicionadas por plugins (firebase_storage, etc.) -->
+    <!-- Remove todas as permissoes de storage/midia — app usa apenas camera -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove"/>
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove"/>
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove"/>
