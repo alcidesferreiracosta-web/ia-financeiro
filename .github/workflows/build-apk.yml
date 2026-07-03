@@ -27,14 +27,14 @@ jobs:
         run: flutter pub get
 
       - name: Decode keystore
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/keystore.jks
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/ia-financeiro-upload.jks
 
       - name: Build signed AAB
         env:
-          KEY_PATH: keystore.jks
-          KEY_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PATH: ia-financeiro-upload.jks
+          KEY_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: flutter build appbundle --release
 
       - name: Upload AAB
@@ -46,10 +46,10 @@ jobs:
 
       - name: Build signed APK
         env:
-          KEY_PATH: keystore.jks
-          KEY_STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PATH: ia-financeiro-upload.jks
+          KEY_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: flutter build apk --release
 
       - name: Upload APK
