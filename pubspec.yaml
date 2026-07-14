@@ -1,7 +1,7 @@
 name: ia_financeiro
 description: IA Financeiro - App de finanças pessoais com IA
 publish_to: 'none'
-version: 1.0.17+18
+version: 1.0.19+20
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -17,7 +17,7 @@ dependencies:
   url_launcher: ^6.3.0
   http: ^1.2.0
   intl: ^0.19.0
-  in_app_purchase: ^3.2.0
+  in_app_purchase: ^3.2.1
   firebase_storage: ^12.1.0
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
